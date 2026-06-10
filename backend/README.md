@@ -79,7 +79,8 @@ uv run pytest
 > **placeholder** (`PlaceholderContractDeployer`) returning a fake address, so
 > the frontend integration works before the Solidity contract exists. Replace
 > it with a `Web3ContractDeployer` (see `app/infrastructure/blockchain.py`)
-> once the Forge contract is compiled. No change is needed in services/routes.
+> using `../blockchain/out/Ticket.sol/Ticket.json` once the Forge contract is
+> compiled. No change is needed in services/routes.
 >
 > Coming next: `POST /events/pay` (card checkout + mint),
 > `GET /tickets?account=` (owned tickets),
