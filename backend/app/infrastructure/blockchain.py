@@ -1,32 +1,34 @@
-"""Contract deployer implementations.
-
-`PlaceholderContractDeployer` does NOT touch any blockchain. It returns a
-deterministic, fake-but-address-shaped string so the full create-category flow
-(API + DB + frontend) works end-to-end before the Solidity contract exists.
-
-When the Forge contract is ready, add a `Web3ContractDeployer` here that:
-  - loads the compiled ABI + bytecode,
-  - sends a deploy transaction signed with settings.deployer_private_key,
-  - waits for the receipt and returns receipt.contractAddress.
-Swap it in `app/dependencies.py` — services and routes stay untouched.
-"""
-
-from __future__ import annotations
-
-import hashlib
-
+import json
+from web3 import Web3
 from app.domain.ports import ContractDeployer
+from app.config import settings
 
+class Web3ContractDeployer(ContractDeployer):
+    def __init__(self):
+        self.w3 = Web3(Web3.HTTPProvider(settings.rpc_url))
+        self.account = self.w3.eth.account.from_key(settings.deployer_private_key)
 
-class PlaceholderContractDeployer(ContractDeployer):
-    async def deploy_ticket_contract(
-        self,
-        *,
-        name: str,
-        symbol: str,
-        max_supply: int,
-        price_wei: int,
-    ) -> str:
-        seed = f"{name}|{symbol}|{max_supply}|{price_wei}".encode()
-        digest = hashlib.sha256(seed).hexdigest()[:40]
-        return f"0x{digest}"
+    async def deploy_ticket_contract(self, *, name: str, symbol: str, max_supply: int, price_wei: int) -> str:
+        # 1. Charger ton ABI et Bytecode (tu devras mettre le fichier .json dans le backend)
+        with open("../blockchain/out/Ticket.sol/Ticket.json") as f:
+            truffle_artifact = json.load(f)
+            abi = truffle_artifact['abi']
+            bytecode = truffle_artifact['bytecode']['object']
+
+        # 2. Préparer le contrat
+        Contract = self.w3.eth.contract(abi=abi, bytecode=bytecode)
+
+        # 3. Construire la transaction
+        tx = Contract.constructor(name, symbol, max_supply, "ipfs://fake...", price_wei).build_transaction({
+            'from': self.account.address,
+            'nonce': self.w3.eth.get_transaction_count(self.account.address),
+            'gas': 2000000,
+            'gasPrice': self.w3.eth.gas_price
+        })
+
+        # 4. Signer et envoyer
+        signed_tx = self.w3.eth.account.sign_transaction(tx, settings.deployer_private_key)
+        tx_hash = self.w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        tx_receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+
+        return tx_receipt.contractAddress

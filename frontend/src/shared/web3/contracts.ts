@@ -4,8 +4,8 @@ import type { Event, OwnedTicket, TicketCategory } from '@/shared/types/models'
 import { ticketAbi } from '@/shared/web3/ticket-abi'
 
 const contractOverrides: Record<string, string | undefined> = {
-  'aurora-general': import.meta.env.VITE_CONTRACT_AURORA_GENERAL,
-  'aurora-lounge': import.meta.env.VITE_CONTRACT_AURORA_LOUNGE,
+  'aurora-general': "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  'aurora-lounge': "0x5FbDB2315678afecb367f032d93F642f64180aa3",
 }
 
 function isMockContractAddress(address: string) {

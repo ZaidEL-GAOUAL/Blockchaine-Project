@@ -15,7 +15,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.domain.ports import ContractDeployer, EventRepository
 from app.domain.services import EventService
-from app.infrastructure.blockchain import PlaceholderContractDeployer
+from app.infrastructure.blockchain import Web3ContractDeployer
 from app.infrastructure.mongo_repository import MongoEventRepository
 
 
@@ -32,7 +32,7 @@ def get_event_repository(
 def get_contract_deployer() -> ContractDeployer:
     # Placeholder for now; swap for a Web3ContractDeployer once the
     # Solidity contract is compiled.
-    return PlaceholderContractDeployer()
+    return Web3ContractDeployer()
 
 
 def get_event_service(

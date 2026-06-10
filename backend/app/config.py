@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     # --- Blockchain (used later for deploy / mint / withdraw) ---
     rpc_url: str = "http://127.0.0.1:8545"
     deployer_private_key: str = ""
+    ticket_contract_address: str = ""
 
     # --- IPFS / Pinata (used later) ---
     pinata_jwt: str = ""
