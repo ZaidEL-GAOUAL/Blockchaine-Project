@@ -5,6 +5,7 @@ import {
   getStoreState,
   subscribeToStore,
 } from '@/shared/mocks/store'
+import { apiClient } from '@/shared/services/api-client'
 import { withDelay } from '@/shared/services/helpers'
 import type {
   CreateCategoryPayload,
@@ -35,6 +36,31 @@ export const eventsService = {
   },
 
   createCategory(eventId: string, payload: CreateCategoryPayload) {
+    if (apiClient.isConfigured()) {
+      return apiClient.createCategory(eventId, payload).then((response) => {
+        const contractAddress =
+          response.deployment?.contractAddress ?? response.contractAddress
+
+        if (!contractAddress) {
+          throw new Error('The category API did not return a contract address.')
+        }
+
+        const category = createCategory(eventId, payload, contractAddress)
+
+        return {
+          category: {
+            ...category,
+            ...response.category,
+            contractAddress,
+          },
+          deployment: {
+            contractAddress,
+            symbol: response.deployment?.symbol ?? payload.symbol,
+          },
+        }
+      })
+    }
+
     return withDelay(() => {
       const deployment = deployContractMock(payload.symbol)
       const category = createCategory(eventId, payload, deployment.contractAddress)

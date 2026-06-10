@@ -1,6 +1,11 @@
-# Blockchaine Project Frontend
+# Blockchaine Project
 
-Frontend-only Vite + React prototype for the blockchain course ticketing project. The app is styled with a warm `caffeine`-inspired theme and covers both buyer and seller flows with mocked data.
+This repository is split into:
+
+- `frontend/`: Vite + React ticketing app
+- `backend/`: placeholder for the API developed separately by the backend teammate
+
+The frontend is styled with a warm `caffeine`-inspired theme and covers both buyer and seller flows with mocked data, plus a real Wagmi wallet connection for the ETH checkout path.
 
 ## Included flows
 
@@ -11,7 +16,9 @@ Frontend-only Vite + React prototype for the blockchain course ticketing project
 - My Tickets page filtered by wallet ownership
 - Seller dashboard
 - Seller event creation
-- Seller ticket-category creation with mock contract deployment
+- Seller ticket-category creation linked to an optional backend deployer API
+- Real injected-wallet connection with Wagmi
+- Optional real on-chain `buy` and `ticketsOf` calls when a deployed ticket contract is configured
 
 ## Stack
 
@@ -20,24 +27,60 @@ Frontend-only Vite + React prototype for the blockchain course ticketing project
 - React Router
 - Tailwind CSS
 - TypeScript
+- Wagmi
 - Vitest + Testing Library
 
 ## Run locally
 
 ```bash
+cd frontend
 npm install
 npm run dev
 ```
 
+## Optional API and contract configuration
+
+Create `frontend/.env.local` if you want category creation to call the backend deployer and the ETH checkout to talk to a real deployed contract:
+
+```bash
+VITE_API_BASE_URL=http://localhost:8000
+VITE_TICKET_CHAIN_ID=11155111
+VITE_CONTRACT_AURORA_GENERAL=0xYourDeployedTicketContract
+VITE_CONTRACT_AURORA_LOUNGE=0xYourOtherDeployedTicketContract
+```
+
+When `VITE_API_BASE_URL` is set, the seller category form calls:
+
+```text
+POST /events/:eventId/categories
+```
+
+Expected response shape:
+
+```json
+{
+  "category": {},
+  "deployment": {
+    "contractAddress": "0x..."
+  }
+}
+```
+
+The configured contract is expected to expose:
+
+- `buy(uint256 quantity)` payable
+- `ticketsOf(address account)` view returns `uint256[]`
+
 ## Test and build
 
 ```bash
+cd frontend
 npm run test
 npm run build
 ```
 
 ## Notes
 
-- The app is frontend-only for now.
-- All data is mocked through local services and a small browser-backed store.
-- The service layer is shaped so real API and blockchain integrations can replace the mocks later without rewriting the UI.
+- The backend folder is intentionally not implemented here.
+- If `VITE_API_BASE_URL` is missing, category creation falls back to the local mock deployer.
+- The course says `ERC720`, but the Solidity skeleton and OpenZeppelin import are `ERC721`; this frontend supports the course assumption: one category is represented by one ticket contract address.

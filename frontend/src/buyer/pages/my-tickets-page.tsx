@@ -1,17 +1,29 @@
 import { Ticket, Wallet } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import type { Address } from 'viem'
+import { useAccount, useChainId, useConnect, useDisconnect, usePublicClient } from 'wagmi'
 
 import { contractService } from '@/shared/services/contract-service'
-import { walletService } from '@/shared/services/wallet-service'
-import type { OwnedTicket, WalletSession } from '@/shared/types/models'
+import { eventsService } from '@/shared/services/events-service'
+import type { Event, OwnedTicket } from '@/shared/types/models'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Card } from '@/shared/ui/card'
 import { StateBlock } from '@/shared/ui/state-block'
 import { WalletPill } from '@/shared/ui/wallet-pill'
+import {
+  countConfiguredCategories,
+  readOwnedTicketsFromChain,
+} from '@/shared/web3/contracts'
+import { getKnownChainName } from '@/shared/web3/wagmi'
 
 export function MyTicketsPage() {
-  const [wallet, setWallet] = useState<WalletSession | null>(null)
+  const { address, isConnected } = useAccount()
+  const chainId = useChainId()
+  const { connect, connectors, isPending: isConnecting } = useConnect()
+  const { disconnect } = useDisconnect()
+  const publicClient = usePublicClient()
+  const [events, setEvents] = useState<Event[]>([])
   const [tickets, setTickets] = useState<OwnedTicket[]>([])
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [error, setError] = useState('')
@@ -21,20 +33,34 @@ export function MyTicketsPage() {
 
     async function syncPage() {
       try {
-        const session = await walletService.getSession()
+        const eventList = await eventsService.listEvents()
         if (!active) {
           return
         }
 
-        setWallet(session)
+        setEvents(eventList)
 
-        if (session.account) {
-          const owned = await contractService.getOwnedTickets(session.account)
-          if (active) {
-            setTickets(owned)
+        const mockOwnedTickets = address
+          ? await contractService.getOwnedTickets(address)
+          : []
+        const onChainTickets =
+          address && publicClient
+            ? await readOwnedTicketsFromChain({
+                account: address as Address,
+                events: eventList,
+                publicClient,
+              })
+            : []
+
+        const mergedTickets = [...mockOwnedTickets]
+        for (const onChainTicket of onChainTickets) {
+          if (!mergedTickets.some((ticket) => ticket.id === onChainTicket.id)) {
+            mergedTickets.push(onChainTicket)
           }
-        } else {
-          setTickets([])
+        }
+
+        if (active) {
+          setTickets(mergedTickets)
         }
 
         if (active) {
@@ -52,26 +78,23 @@ export function MyTicketsPage() {
       }
     }
 
-    syncPage()
-
-    const unsubscribe = walletService.subscribe(() => {
-      void syncPage()
-    })
+    void syncPage()
 
     return () => {
       active = false
-      unsubscribe()
     }
-  }, [])
+  }, [address, publicClient])
 
-  async function connectWallet() {
-    setStatus('loading')
-    await walletService.connect()
-  }
+  function connectWallet() {
+    const injectedConnector = connectors[0]
 
-  async function disconnectWallet() {
-    setStatus('loading')
-    await walletService.disconnect()
+    if (!injectedConnector) {
+      setError('No injected wallet was found. Open the app with MetaMask installed.')
+      setStatus('error')
+      return
+    }
+
+    connect({ connector: injectedConnector })
   }
 
   if (status === 'loading') {
@@ -79,7 +102,7 @@ export function MyTicketsPage() {
       <StateBlock
         eyebrow="Loading"
         title="Reading wallet-owned tickets"
-        description="Refreshing the current wallet session and matching owned NFT tickets from the mock contract service."
+        description="Refreshing the connected wallet and combining on-chain ticket ownership with the demo fake-card mint records."
       />
     )
   }
@@ -94,13 +117,17 @@ export function MyTicketsPage() {
     )
   }
 
-  if (!wallet?.isConnected || !wallet.account) {
+  if (!isConnected || !address) {
     return (
       <StateBlock
         eyebrow="Empty"
         title="Connect a wallet to see ticket ownership"
-        description="This screen intentionally mirrors the course use case where a buyer can only inspect their NFT tickets once they are logged in with their wallet."
-        action={<Button onClick={connectWallet}>Connect mocked wallet</Button>}
+        description="This screen now uses a real injected wallet. It can read configured ticket contracts on-chain and also keep the fake-card demo flow visible locally."
+        action={
+          <Button onClick={connectWallet} disabled={isConnecting}>
+            {isConnecting ? 'Connecting wallet...' : 'Connect wallet'}
+          </Button>
+        }
       />
     )
   }
@@ -113,14 +140,15 @@ export function MyTicketsPage() {
           <div>
             <h1 className="font-display text-4xl">My NFT tickets</h1>
             <p className="mt-2 text-sm leading-7 text-[var(--muted-foreground)]">
-              Tickets shown here are filtered by the connected wallet address and reflect both
-              ETH and fake card purchase paths.
+              Tickets shown here are filtered by the connected wallet address. Real ETH
+              purchases can be read on-chain, and the fake card flow still appears through the
+              local demo store.
             </p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <WalletPill account={wallet.account} network={wallet.network} />
-          <Button variant="secondary" onClick={disconnectWallet}>
+          <WalletPill account={address} network={getKnownChainName(chainId)} />
+          <Button variant="secondary" onClick={() => disconnect()}>
             Disconnect
           </Button>
         </div>
@@ -172,9 +200,9 @@ export function MyTicketsPage() {
           <p className="font-semibold">Integration note</p>
         </div>
         <p className="text-sm leading-7 text-[var(--muted-foreground)]">
-          This page is already shaped like the real web3 version: replace the mocked wallet
-          session and ownership service with live on-chain reads, and the UI can stay almost
-          unchanged.
+          Configured on-chain categories found: {countConfiguredCategories(events)}. Set the
+          contract env vars for the seeded categories to make the ETH checkout and ownership
+          views hit real contracts.
         </p>
       </Card>
     </div>

@@ -144,7 +144,7 @@ export function CreateCategoryPage() {
           <h1 className="font-display text-4xl">Deploy a category for {event.title}</h1>
           <p className="mt-3 text-sm leading-7 text-[var(--muted-foreground)]">
             One ticket category equals one NFT contract in the project assumptions, so this
-            form pairs ticket pricing and metadata with a mock deployment result.
+            form can call the backend deployer when `VITE_API_BASE_URL` is configured.
           </p>
         </div>
 
@@ -238,7 +238,7 @@ export function CreateCategoryPage() {
           ) : null}
 
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Deploying category...' : 'Create category and deploy mock contract'}
+            {isSubmitting ? 'Deploying category...' : 'Create category and deploy contract'}
           </Button>
         </form>
       </Card>
@@ -249,7 +249,7 @@ export function CreateCategoryPage() {
           <>
             <div className="flex items-center gap-3">
               <CheckCircle2 className="h-5 w-5 text-[var(--accent)]" />
-              <p className="font-semibold">Mock contract deployed</p>
+              <p className="font-semibold">Contract address received</p>
             </div>
             <div className="grid gap-3 rounded-[24px] bg-[var(--background-soft)] p-5 text-sm">
               <SummaryLine label="Event" value={event.title} />
@@ -269,7 +269,7 @@ export function CreateCategoryPage() {
           <div className="grid gap-4 text-sm leading-7 text-[var(--muted-foreground)]">
             <p>• The deployed address is shown immediately after creation.</p>
             <p>• The new category becomes available on the buyer event page.</p>
-            <p>• Future backend or smart-contract integration can replace the mock deployer only.</p>
+            <p>• With `VITE_API_BASE_URL`, this form calls the backend deployer endpoint.</p>
           </div>
         )}
       </Card>
