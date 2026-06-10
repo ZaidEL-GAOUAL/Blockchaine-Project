@@ -7,6 +7,9 @@ export const supportedChains = [sepolia, mainnet] as const
 export const defaultTicketChainId = Number(
   import.meta.env.VITE_TICKET_CHAIN_ID ?? sepolia.id,
 )
+const sepoliaRpcUrl =
+  import.meta.env.VITE_SEPOLIA_RPC_URL?.trim() ||
+  'https://ethereum-sepolia-rpc.publicnode.com'
 
 export const wagmiConfig = createConfig({
   chains: supportedChains,
@@ -17,7 +20,7 @@ export const wagmiConfig = createConfig({
   ],
   transports: {
     [mainnet.id]: http(),
-    [sepolia.id]: http(),
+    [sepolia.id]: http(sepoliaRpcUrl),
   },
 })
 
