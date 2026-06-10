@@ -43,7 +43,10 @@ Then deploy:
 
 ```bash
 source .env
-forge script script/Deploy.s.sol --rpc-url "$SEPOLIA_RPC" --broadcast
+forge script script/Deploy.s.sol:Deploy \
+  --rpc-url "$SEPOLIA_RPC" \
+  --private-key "$PRIVATE_KEY" \
+  --broadcast
 ```
 
 After deployment, copy the contract address into the event category in the
