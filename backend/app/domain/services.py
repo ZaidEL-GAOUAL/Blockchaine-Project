@@ -87,6 +87,7 @@ class EventService:
             name=payload.name,
             symbol=payload.symbol,
             max_supply=payload.max_supply,
+            metadata_uri=payload.metadata_uri,
             price_wei=eth_to_wei(payload.price_eth),
         )
 

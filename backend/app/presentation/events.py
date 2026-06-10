@@ -18,6 +18,7 @@ from app.domain.models import (
     Event,
     TicketCategory,
 )
+from app.domain.ports import ContractDeploymentError
 from app.domain.services import EventNotFoundError
 
 router = APIRouter(prefix="/events", tags=["events"])
@@ -82,6 +83,11 @@ async def create_category(
     except EventNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Event not found."
+        )
+    except ContractDeploymentError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=str(exc),
         )
     return CreateCategoryResponse(
         category=category,

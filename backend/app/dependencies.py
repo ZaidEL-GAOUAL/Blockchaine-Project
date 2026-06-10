@@ -13,9 +13,13 @@ from typing import Annotated
 from fastapi import Depends, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
+from app.config import settings
 from app.domain.ports import ContractDeployer, EventRepository
 from app.domain.services import EventService
-from app.infrastructure.blockchain import PlaceholderContractDeployer
+from app.infrastructure.blockchain import (
+    PlaceholderContractDeployer,
+    Web3ContractDeployer,
+)
 from app.infrastructure.mongo_repository import MongoEventRepository
 
 
@@ -30,8 +34,13 @@ def get_event_repository(
 
 
 def get_contract_deployer() -> ContractDeployer:
-    # Placeholder for now; swap for a Web3ContractDeployer once the
-    # Solidity contract is compiled.
+    if settings.use_web3_deployer:
+        return Web3ContractDeployer(
+            rpc_url=settings.rpc_url,
+            private_key=settings.deployer_private_key,
+            artifact_path=settings.resolved_ticket_artifact_path,
+        )
+
     return PlaceholderContractDeployer()
 
 

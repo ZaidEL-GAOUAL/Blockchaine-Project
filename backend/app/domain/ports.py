@@ -13,6 +13,14 @@ from abc import ABC, abstractmethod
 from app.domain.models import Event, TicketCategory
 
 
+class ContractDeploymentError(Exception):
+    """Raised when deploying a ticket contract fails."""
+
+
+class ContractDeploymentConfigError(ContractDeploymentError):
+    """Raised when the deployment adapter is missing required configuration."""
+
+
 class EventRepository(ABC):
     @abstractmethod
     async def list_events(self) -> list[Event]: ...
@@ -47,5 +55,6 @@ class ContractDeployer(ABC):
         name: str,
         symbol: str,
         max_supply: int,
+        metadata_uri: str,
         price_wei: int,
     ) -> str: ...
