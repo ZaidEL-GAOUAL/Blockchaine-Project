@@ -5,11 +5,13 @@ import type {
   TicketCategory,
 } from '@/shared/types/models'
 
-const defaultApiBaseUrl =
-  import.meta.env.MODE === 'test' ? undefined : 'http://localhost:8000'
-const apiBaseUrl = (
-  import.meta.env.VITE_API_BASE_URL ?? defaultApiBaseUrl
-)?.replace(/\/$/, '')
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim()
+const isRealBrowserRuntime =
+  typeof window !== 'undefined' &&
+  typeof navigator !== 'undefined' &&
+  !navigator.userAgent.toLowerCase().includes('jsdom')
+const defaultApiBaseUrl = isRealBrowserRuntime ? 'http://localhost:8000' : undefined
+const apiBaseUrl = (configuredApiBaseUrl || defaultApiBaseUrl)?.replace(/\/$/, '')
 
 interface CreateCategoryApiResponse {
   category?: Partial<TicketCategory>

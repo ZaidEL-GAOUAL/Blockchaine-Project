@@ -1,5 +1,5 @@
 import {
-  createCategory,
+  createCategory as createMockCategory,
   createEvent,
   deployContractMock,
   getStoreState,
@@ -13,6 +13,45 @@ import type {
   Event,
   TicketCategory,
 } from '@/shared/types/models'
+
+function slugifyCategoryId(eventId: string, categoryName: string) {
+  const slug = categoryName
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+
+  return `${eventId}-${slug || 'category'}`
+}
+
+function buildApiCategory(
+  eventId: string,
+  payload: CreateCategoryPayload,
+  contractAddress: string,
+  category?: Partial<TicketCategory>,
+): TicketCategory {
+  const fallback: TicketCategory = {
+    id: slugifyCategoryId(eventId, payload.name),
+    eventId,
+    name: payload.name,
+    symbol: payload.symbol,
+    description: payload.description,
+    priceEth: payload.priceEth,
+    priceEur: payload.priceEur,
+    maxSupply: payload.maxSupply,
+    mintedCount: 0,
+    metadataUri: payload.metadataUri,
+    contractAddress,
+    benefits: payload.benefits,
+  }
+
+  return {
+    ...fallback,
+    ...category,
+    eventId: category?.eventId ?? eventId,
+    contractAddress: category?.contractAddress ?? contractAddress,
+  }
+}
 
 export const eventsService = {
   listEvents() {
@@ -57,14 +96,8 @@ export const eventsService = {
           throw new Error('The category API did not return a contract address.')
         }
 
-        const category = createCategory(eventId, payload, contractAddress)
-
         return {
-          category: {
-            ...category,
-            ...response.category,
-            contractAddress,
-          },
+          category: buildApiCategory(eventId, payload, contractAddress, response.category),
           deployment: {
             contractAddress,
             symbol: response.deployment?.symbol ?? payload.symbol,
@@ -75,7 +108,7 @@ export const eventsService = {
 
     return withDelay(() => {
       const deployment = deployContractMock(payload.symbol)
-      const category = createCategory(eventId, payload, deployment.contractAddress)
+      const category = createMockCategory(eventId, payload, deployment.contractAddress)
 
       return {
         category,
