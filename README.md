@@ -4,6 +4,7 @@ This repository is split into:
 
 - `frontend/`: Vite + React ticketing app
 - `backend/`: FastAPI + MongoDB API developed by the backend teammate
+- `blockchain/`: Forge + Solidity ERC721 ticket contract
 
 The frontend is styled with a warm `caffeine`-inspired theme and covers both buyer and seller flows, plus a real Wagmi wallet connection for the ETH checkout path.
 
@@ -29,6 +30,7 @@ The frontend is styled with a warm `caffeine`-inspired theme and covers both buy
 - TypeScript
 - Wagmi
 - Vitest + Testing Library
+- Solidity + Foundry
 
 ## Run locally
 
@@ -82,8 +84,13 @@ npm run test
 npm run build
 ```
 
+```bash
+cd blockchain
+forge test
+```
+
 ## Notes
 
 - Event listing, event detail, event creation, and category creation use the backend API by default.
 - Fake card checkout and ticket ownership stay local/on-chain until the backend exposes those routes.
-- The course says `ERC720`, but the Solidity skeleton and OpenZeppelin import are `ERC721`; this frontend supports the course assumption: one category is represented by one ticket contract address.
+- The course says `ERC720` in some notes, but the Solidity skeleton and OpenZeppelin import are `ERC721`; this project follows the skeleton: one ticket category is represented by one deployed ticket contract.
