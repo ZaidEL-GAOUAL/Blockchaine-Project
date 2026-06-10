@@ -49,6 +49,9 @@ VITE_CONTRACT_AURORA_GENERAL=0xYourDeployedTicketContract
 VITE_CONTRACT_AURORA_LOUNGE=0xYourOtherDeployedTicketContract
 ```
 
+`VITE_API_BASE_URL` defaults to `http://localhost:8000` outside tests, so the
+frontend will use the local FastAPI backend by default when it is running.
+
 When `VITE_API_BASE_URL` is set, the seller category form calls:
 
 ```text
@@ -81,5 +84,6 @@ npm run build
 
 ## Notes
 
-- If `VITE_API_BASE_URL` is missing, category creation falls back to the local mock deployer.
+- Event listing, event detail, event creation, and category creation use the backend API by default.
+- Fake card checkout and ticket ownership stay local/on-chain until the backend exposes those routes.
 - The course says `ERC720`, but the Solidity skeleton and OpenZeppelin import are `ERC721`; this frontend supports the course assumption: one category is represented by one ticket contract address.

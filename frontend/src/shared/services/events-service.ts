@@ -16,10 +16,18 @@ import type {
 
 export const eventsService = {
   listEvents() {
+    if (apiClient.isConfigured()) {
+      return apiClient.listEvents()
+    }
+
     return withDelay(() => getStoreState().events)
   },
 
   getEvent(eventId: string) {
+    if (apiClient.isConfigured()) {
+      return apiClient.getEvent(eventId)
+    }
+
     return withDelay(() => {
       const event = getStoreState().events.find((item) => item.id === eventId)
 
@@ -32,6 +40,10 @@ export const eventsService = {
   },
 
   createEvent(payload: CreateEventPayload) {
+    if (apiClient.isConfigured()) {
+      return apiClient.createEvent(payload)
+    }
+
     return withDelay(() => createEvent(payload), 350)
   },
 

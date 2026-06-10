@@ -55,7 +55,7 @@ export function SellerDashboardPage() {
       <StateBlock
         eyebrow="Loading"
         title="Preparing the seller dashboard"
-        description="Fetching the event list, deployed categories, and creation state from the mock store."
+        description="Fetching the event list, deployed categories, and creation state from the API."
       />
     )
   }

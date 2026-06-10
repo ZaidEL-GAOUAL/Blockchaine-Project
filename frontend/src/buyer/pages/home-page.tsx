@@ -48,7 +48,7 @@ export function HomePage() {
       <StateBlock
         eyebrow="Loading"
         title="Preparing the buyer experience"
-        description="Reading the featured event, ticket categories, and seller-created content from the mock event store."
+        description="Reading the featured event, ticket categories, and seller-created content from the API."
       />
     )
   }

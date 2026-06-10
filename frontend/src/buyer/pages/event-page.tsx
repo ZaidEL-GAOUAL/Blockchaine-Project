@@ -80,7 +80,7 @@ export function EventPage() {
       <StateBlock
         eyebrow="Loading"
         title="Preparing event details"
-        description="Fetching the event, seller-defined ticket categories, and current availability from the mock store."
+        description="Fetching the event, seller-defined ticket categories, and current availability from the API."
       />
     )
   }

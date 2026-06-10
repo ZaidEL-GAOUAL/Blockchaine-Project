@@ -1,9 +1,15 @@
 import type {
   CreateCategoryPayload,
+  CreateEventPayload,
+  Event,
   TicketCategory,
 } from '@/shared/types/models'
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '')
+const defaultApiBaseUrl =
+  import.meta.env.MODE === 'test' ? undefined : 'http://localhost:8000'
+const apiBaseUrl = (
+  import.meta.env.VITE_API_BASE_URL ?? defaultApiBaseUrl
+)?.replace(/\/$/, '')
 
 interface CreateCategoryApiResponse {
   category?: Partial<TicketCategory>
@@ -17,6 +23,54 @@ interface CreateCategoryApiResponse {
 export const apiClient = {
   isConfigured() {
     return Boolean(apiBaseUrl)
+  },
+
+  async listEvents() {
+    if (!apiBaseUrl) {
+      throw new Error('VITE_API_BASE_URL is not configured.')
+    }
+
+    const response = await fetch(`${apiBaseUrl}/events`)
+
+    if (!response.ok) {
+      throw new Error(`Could not load events. API returned ${response.status}.`)
+    }
+
+    return (await response.json()) as Event[]
+  },
+
+  async getEvent(eventId: string) {
+    if (!apiBaseUrl) {
+      throw new Error('VITE_API_BASE_URL is not configured.')
+    }
+
+    const response = await fetch(`${apiBaseUrl}/events/${encodeURIComponent(eventId)}`)
+
+    if (!response.ok) {
+      throw new Error(`Could not load event. API returned ${response.status}.`)
+    }
+
+    return (await response.json()) as Event
+  },
+
+  async createEvent(payload: CreateEventPayload) {
+    if (!apiBaseUrl) {
+      throw new Error('VITE_API_BASE_URL is not configured.')
+    }
+
+    const response = await fetch(`${apiBaseUrl}/events`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Event creation failed with status ${response.status}.`)
+    }
+
+    return (await response.json()) as Event
   },
 
   async createCategory(eventId: string, payload: CreateCategoryPayload) {
