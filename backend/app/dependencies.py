@@ -13,8 +13,9 @@ from typing import Annotated
 from fastapi import Depends, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.domain.ports import EventRepository
+from app.domain.ports import ContractDeployer, EventRepository
 from app.domain.services import EventService
+from app.infrastructure.blockchain import PlaceholderContractDeployer
 from app.infrastructure.mongo_repository import MongoEventRepository
 
 
@@ -28,10 +29,17 @@ def get_event_repository(
     return MongoEventRepository(db)
 
 
+def get_contract_deployer() -> ContractDeployer:
+    # Placeholder for now; swap for a Web3ContractDeployer once the
+    # Solidity contract is compiled.
+    return PlaceholderContractDeployer()
+
+
 def get_event_service(
     repo: Annotated[EventRepository, Depends(get_event_repository)],
+    deployer: Annotated[ContractDeployer, Depends(get_contract_deployer)],
 ) -> EventService:
-    return EventService(repo)
+    return EventService(repo, deployer)
 
 
 EventServiceDep = Annotated[EventService, Depends(get_event_service)]

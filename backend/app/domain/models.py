@@ -68,3 +68,20 @@ class CreateCategoryPayload(CamelModel):
     max_supply: int
     metadata_uri: str = ""
     benefits: list[str] = Field(default_factory=list)
+
+
+# ---- Response shapes ----
+
+
+class Deployment(CamelModel):
+    contract_address: str
+    symbol: str
+
+
+class CreateCategoryResponse(CamelModel):
+    """Matches what the frontend's api-client expects:
+    `{ category: {...}, deployment: { contractAddress, symbol } }`.
+    """
+
+    category: TicketCategory
+    deployment: Deployment

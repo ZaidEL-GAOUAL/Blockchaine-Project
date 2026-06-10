@@ -11,11 +11,12 @@ from __future__ import annotations
 import re
 
 from app.domain.models import (
+    CreateCategoryPayload,
     CreateEventPayload,
     Event,
     TicketCategory,
 )
-from app.domain.ports import EventRepository
+from app.domain.ports import ContractDeployer, EventRepository
 
 
 class EventNotFoundError(Exception):
@@ -28,9 +29,18 @@ def slugify(value: str) -> str:
     return value.strip("-")
 
 
+def eth_to_wei(amount_eth: float) -> int:
+    return int(round(amount_eth * 10**18))
+
+
 class EventService:
-    def __init__(self, repository: EventRepository) -> None:
+    def __init__(
+        self,
+        repository: EventRepository,
+        deployer: ContractDeployer,
+    ) -> None:
         self._repo = repository
+        self._deployer = deployer
 
     async def list_events(self) -> list[Event]:
         return await self._repo.list_events()
@@ -65,3 +75,42 @@ class EventService:
             categories=[],
         )
         return await self._repo.insert_event(event)
+
+    async def create_category(
+        self, event_id: str, payload: CreateCategoryPayload
+    ) -> TicketCategory:
+        # Fails with EventNotFoundError if the event does not exist.
+        event = await self.get_event(event_id)
+
+        # Deploy the NFT contract (placeholder today, real web3.py later).
+        contract_address = await self._deployer.deploy_ticket_contract(
+            name=payload.name,
+            symbol=payload.symbol,
+            max_supply=payload.max_supply,
+            price_wei=eth_to_wei(payload.price_eth),
+        )
+
+        # Slug id, mirroring the frontend mock: slugify("<eventId>-<name>").
+        base = slugify(f"{event_id}-{payload.name}") or "category"
+        category_id = base
+        suffix = 1
+        existing_ids = {c.id for c in event.categories}
+        while category_id in existing_ids:
+            category_id = f"{base}-{suffix}"
+            suffix += 1
+
+        category = TicketCategory(
+            id=category_id,
+            event_id=event_id,
+            name=payload.name,
+            symbol=payload.symbol,
+            description=payload.description,
+            price_eth=payload.price_eth,
+            price_eur=payload.price_eur,
+            max_supply=payload.max_supply,
+            minted_count=0,
+            metadata_uri=payload.metadata_uri,
+            contract_address=contract_address,
+            benefits=payload.benefits,
+        )
+        return await self._repo.add_category(event_id, category)

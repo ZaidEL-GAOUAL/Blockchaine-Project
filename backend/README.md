@@ -72,8 +72,15 @@ uv run pytest
 | POST | `/events` | create event |
 | GET | `/events/{id}` | get one event (with categories) |
 | GET | `/events/{id}/categories` | list ticket categories |
+| POST | `/events/{id}/categories` | create category → deploys NFT contract, returns `{category, deployment}` |
 | GET | `/health` | liveness |
 
-> Coming next: `POST /events/{id}/categories` (deploy NFT contract),
-> `POST /events/pay` (card checkout + mint), `GET /tickets?account=` (owned
-> tickets), `POST /categories/{id}/withdraw` (seller collects ETH).
+> The contract deployment behind `POST /events/{id}/categories` is currently a
+> **placeholder** (`PlaceholderContractDeployer`) returning a fake address, so
+> the frontend integration works before the Solidity contract exists. Replace
+> it with a `Web3ContractDeployer` (see `app/infrastructure/blockchain.py`)
+> once the Forge contract is compiled — no change needed in services/routes.
+>
+> Coming next: `POST /events/pay` (card checkout + mint),
+> `GET /tickets?account=` (owned tickets),
+> `POST /categories/{id}/withdraw` (seller collects ETH).

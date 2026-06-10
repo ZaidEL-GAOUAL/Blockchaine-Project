@@ -10,7 +10,14 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 
 from app.dependencies import EventServiceDep
-from app.domain.models import CreateEventPayload, Event, TicketCategory
+from app.domain.models import (
+    CreateCategoryPayload,
+    CreateCategoryResponse,
+    CreateEventPayload,
+    Deployment,
+    Event,
+    TicketCategory,
+)
 from app.domain.services import EventNotFoundError
 
 router = APIRouter(prefix="/events", tags=["events"])
@@ -57,3 +64,29 @@ async def list_categories(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Event not found."
         )
+
+
+@router.post(
+    "/{event_id}/categories",
+    response_model=CreateCategoryResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a ticket category (deploys its NFT contract)",
+)
+async def create_category(
+    event_id: str,
+    payload: CreateCategoryPayload,
+    service: EventServiceDep,
+) -> CreateCategoryResponse:
+    try:
+        category = await service.create_category(event_id, payload)
+    except EventNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found."
+        )
+    return CreateCategoryResponse(
+        category=category,
+        deployment=Deployment(
+            contract_address=category.contract_address,
+            symbol=category.symbol,
+        ),
+    )

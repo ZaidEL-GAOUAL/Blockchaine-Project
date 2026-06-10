@@ -30,3 +30,22 @@ class EventRepository(ABC):
     async def add_category(
         self, event_id: str, category: TicketCategory
     ) -> TicketCategory: ...
+
+
+class ContractDeployer(ABC):
+    """Deploys an NFT ticket contract for one category and returns its address.
+
+    The domain depends on this abstraction only. Today it is backed by a
+    placeholder (no real chain); once the Solidity contract exists, a web3.py
+    implementation replaces it without any change to services or routes.
+    """
+
+    @abstractmethod
+    async def deploy_ticket_contract(
+        self,
+        *,
+        name: str,
+        symbol: str,
+        max_supply: int,
+        price_wei: int,
+    ) -> str: ...

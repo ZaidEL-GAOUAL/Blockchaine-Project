@@ -5,7 +5,7 @@ from app.dependencies import get_event_service
 from app.domain.models import Event
 from app.domain.services import EventService
 from app.main import app
-from tests.fakes import FakeEventRepository
+from tests.fakes import FakeContractDeployer, FakeEventRepository
 
 
 @pytest.fixture
@@ -18,7 +18,10 @@ def client():
         venue="Grand Hall, Paris",
     )
     repo = FakeEventRepository([seed])
-    app.dependency_overrides[get_event_service] = lambda: EventService(repo)
+    deployer = FakeContractDeployer(address="0xDEADBEEF")
+    app.dependency_overrides[get_event_service] = lambda: EventService(
+        repo, deployer
+    )
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
@@ -53,3 +56,41 @@ def test_create_event_returns_camelcase(client):
     # contract with frontend is camelCase
     assert "heroImage" in body
     assert body["categories"] == []
+
+
+def test_create_category_matches_frontend_contract(client):
+    resp = client.post(
+        "/events/aurora-city-live/categories",
+        json={
+            "name": "General Admission",
+            "symbol": "AUR-GA",
+            "description": "ga",
+            "priceEth": 0.08,
+            "priceEur": 49,
+            "maxSupply": 500,
+            "metadataUri": "ipfs://x",
+            "benefits": ["NFT ticket"],
+        },
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    # exact shape the frontend api-client reads
+    assert body["deployment"]["contractAddress"] == "0xDEADBEEF"
+    assert body["deployment"]["symbol"] == "AUR-GA"
+    assert body["category"]["contractAddress"] == "0xDEADBEEF"
+    assert body["category"]["priceEth"] == 0.08
+    assert body["category"]["mintedCount"] == 0
+
+
+def test_create_category_unknown_event_404(client):
+    resp = client.post(
+        "/events/nope/categories",
+        json={
+            "name": "X",
+            "symbol": "X",
+            "priceEth": 0.1,
+            "priceEur": 80,
+            "maxSupply": 10,
+        },
+    )
+    assert resp.status_code == 404
