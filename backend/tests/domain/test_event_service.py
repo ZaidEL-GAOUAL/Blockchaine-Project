@@ -75,6 +75,7 @@ async def test_create_category_deploys_and_persists():
     assert category.minted_count == 0
     # deployer was called with wei-converted price
     assert deployer.calls[0]["price_wei"] == 80_000_000_000_000_000
+    assert deployer.calls[0]["metadata_uri"] == "ipfs://x"
     # persisted on the event
     event = await service.get_event("aurora-city-live")
     assert event.categories[0].id == category.id

@@ -18,13 +18,20 @@ class FakeContractDeployer(ContractDeployer):
         self.calls: list[dict] = []
 
     async def deploy_ticket_contract(
-        self, *, name: str, symbol: str, max_supply: int, price_wei: int
+        self,
+        *,
+        name: str,
+        symbol: str,
+        max_supply: int,
+        metadata_uri: str,
+        price_wei: int,
     ) -> str:
         self.calls.append(
             {
                 "name": name,
                 "symbol": symbol,
                 "max_supply": max_supply,
+                "metadata_uri": metadata_uri,
                 "price_wei": price_wei,
             }
         )

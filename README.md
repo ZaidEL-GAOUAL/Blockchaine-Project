@@ -76,12 +76,28 @@ The configured contract is expected to expose:
 - `buy(uint256 quantity)` payable
 - `ticketsOf(address account)` view returns `uint256[]`
 
+For real category deployment, compile the Solidity artifact first:
+
+```bash
+cd blockchain
+forge build
+```
+
+Then run the backend with `DEPLOYER_PRIVATE_KEY` set. The
+`POST /events/:eventId/categories` route will deploy one `Ticket.sol` contract
+for the new category on Sepolia and return the real address.
+
 ## Test and build
 
 ```bash
 cd frontend
 npm run test
 npm run build
+```
+
+```bash
+cd backend
+uv run --extra dev python -m pytest
 ```
 
 ```bash

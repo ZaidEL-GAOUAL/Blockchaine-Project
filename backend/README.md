@@ -62,7 +62,7 @@ see documents created via the API.
 
 ## Tests
 ```bash
-uv run pytest
+uv run --extra dev python -m pytest
 ```
 
 ## API contract (matches frontend `frontend/src/shared/types/models.ts`)
@@ -75,13 +75,33 @@ uv run pytest
 | POST | `/events/{id}/categories` | create category, deploys NFT contract, returns `{category, deployment}` |
 | GET | `/health` | liveness |
 
-> The contract deployment behind `POST /events/{id}/categories` is currently a
-> **placeholder** (`PlaceholderContractDeployer`) returning a fake address, so
-> the frontend integration works before the Solidity contract exists. Replace
-> it with a `Web3ContractDeployer` (see `app/infrastructure/blockchain.py`)
-> using `../blockchain/out/Ticket.sol/Ticket.json` once the Forge contract is
-> compiled. No change is needed in services/routes.
+> The contract deployment behind `POST /events/{id}/categories` uses
+> `CONTRACT_DEPLOYER_MODE=auto` by default. If `DEPLOYER_PRIVATE_KEY` is empty,
+> it returns a deterministic placeholder address for easy local demos. If
+> `DEPLOYER_PRIVATE_KEY` is set, it uses `Web3ContractDeployer` to deploy the
+> compiled Forge artifact at `../blockchain/out/Ticket.sol/Ticket.json`.
 >
 > Coming next: `POST /events/pay` (card checkout + mint),
 > `GET /tickets?account=` (owned tickets),
 > `POST /categories/{id}/withdraw` (seller collects ETH).
+
+## Real Sepolia category deployment
+
+Compile the Solidity contract first:
+
+```bash
+cd ../blockchain
+forge build
+```
+
+Then set these values in `backend/.env`:
+
+```bash
+RPC_URL=https://ethereum-sepolia-rpc.publicnode.com/
+DEPLOYER_PRIVATE_KEY=your_private_key
+CONTRACT_DEPLOYER_MODE=auto
+TICKET_ARTIFACT_PATH=../blockchain/out/Ticket.sol/Ticket.json
+```
+
+Now `POST /events/{id}/categories` deploys one new `Ticket.sol` ERC721
+contract for that category and stores the real contract address.
