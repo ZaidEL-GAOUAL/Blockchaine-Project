@@ -249,9 +249,15 @@ export function EthCheckoutPage() {
               <span className="truncate">{submittedHash}</span>
               <Copy className="h-4 w-4 text-[var(--muted-foreground)]" />
             </div>
-            <Link to="/my-tickets">
-              <Button>Go to My Tickets</Button>
-            </Link>
+            {isConfirmed ? (
+              <Link to="/my-tickets">
+                <Button>Go to My Tickets</Button>
+              </Link>
+            ) : (
+              <Button variant="secondary" disabled>
+                Waiting for confirmation before tickets appear
+              </Button>
+            )}
           </Card>
         ) : (
           <div className="grid gap-3">

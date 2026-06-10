@@ -47,12 +47,15 @@ Create `frontend/.env.local` if you want category creation to call the backend d
 ```bash
 VITE_API_BASE_URL=http://localhost:8000
 VITE_TICKET_CHAIN_ID=11155111
+VITE_SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
 VITE_CONTRACT_AURORA_GENERAL=0xYourDeployedTicketContract
 VITE_CONTRACT_AURORA_LOUNGE=0xYourOtherDeployedTicketContract
 ```
 
 `VITE_API_BASE_URL` defaults to `http://localhost:8000` outside tests, so the
 frontend will use the local FastAPI backend by default when it is running.
+`VITE_SEPOLIA_RPC_URL` defaults to the public Sepolia RPC above and is used for
+wallet reads such as `ticketsOf(address)`.
 
 When `VITE_API_BASE_URL` is set, the seller category form calls:
 

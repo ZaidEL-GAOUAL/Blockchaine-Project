@@ -1,5 +1,5 @@
-import { Ticket, Wallet } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { RefreshCcw, Ticket, Wallet } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import type { Address } from 'viem'
 import { useAccount, useChainId, useConnect, useDisconnect, usePublicClient } from 'wagmi'
 
@@ -28,16 +28,15 @@ export function MyTicketsPage() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    let active = true
+  const syncPage = useCallback(
+    async ({ keepCurrentView = false } = {}) => {
+      if (!keepCurrentView) {
+        setStatus('loading')
+      }
 
-    async function syncPage() {
       try {
+        setError('')
         const eventList = await eventsService.listEvents()
-        if (!active) {
-          return
-        }
-
         setEvents(eventList)
 
         const mockOwnedTickets = address
@@ -54,36 +53,37 @@ export function MyTicketsPage() {
 
         const mergedTickets = [...mockOwnedTickets]
         for (const onChainTicket of onChainTickets) {
-          if (!mergedTickets.some((ticket) => ticket.id === onChainTicket.id)) {
+          const alreadyListed = mergedTickets.some(
+            (ticket) =>
+              ticket.walletAddress.toLowerCase() ===
+                onChainTicket.walletAddress.toLowerCase() &&
+              ticket.contractAddress.toLowerCase() ===
+                onChainTicket.contractAddress.toLowerCase() &&
+              ticket.tokenId === onChainTicket.tokenId,
+          )
+
+          if (!alreadyListed) {
             mergedTickets.push(onChainTicket)
           }
         }
 
-        if (active) {
-          setTickets(mergedTickets)
-        }
-
-        if (active) {
-          setStatus('success')
-        }
+        setTickets(mergedTickets)
+        setStatus('success')
       } catch (responseError) {
-        if (active) {
-          setStatus('error')
-          setError(
-            responseError instanceof Error
-              ? responseError.message
-              : 'Could not read ticket ownership.',
-          )
-        }
+        setStatus('error')
+        setError(
+          responseError instanceof Error
+            ? responseError.message
+            : 'Could not read ticket ownership.',
+        )
       }
-    }
+    },
+    [address, publicClient],
+  )
 
+  useEffect(() => {
     void syncPage()
-
-    return () => {
-      active = false
-    }
-  }, [address, publicClient])
+  }, [syncPage])
 
   function connectWallet() {
     const injectedConnector = connectors[0]
@@ -158,7 +158,17 @@ export function MyTicketsPage() {
         <StateBlock
           eyebrow="Empty"
           title="No tickets are owned by this wallet yet"
-          description="Complete a purchase in the ETH or fake card checkout flows, then return here to verify ownership."
+          description="If you just bought with ETH, wait for the transaction confirmation, then refresh ownership. Sepolia can take a short moment to return the new token."
+          action={
+            <Button
+              className="mx-auto gap-2"
+              variant="secondary"
+              onClick={() => void syncPage({ keepCurrentView: true })}
+            >
+              <RefreshCcw className="h-4 w-4" />
+              Refresh ownership
+            </Button>
+          }
         />
       ) : (
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
