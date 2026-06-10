@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+:root {
+  --background: #f4ede2;
+  --background-soft: #efe5d6;
+  --panel: rgba(255, 250, 242, 0.82);
+  --panel-strong: #e5d7c2;
+  --foreground: #2e241d;
+  --muted-foreground: #756558;
+  --accent: #5f6a3c;
+  --accent-strong: #4c5531;
+  --accent-foreground: #f7f1e7;
+  --border: rgba(94, 75, 58, 0.14);
+  --danger: #c45c3a;
+  --paper: #f7f1e7;
+  --highlight: #d6bc79;
+}
+
+@theme inline {
+  --font-display: 'Fraunces', serif;
+  --font-sans: 'Manrope', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at top, rgba(122, 134, 84, 0.14), transparent 28%),
+    linear-gradient(180deg, #f8f0e6 0%, #f4ede2 45%, #eee5d8 100%);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  background: rgba(95, 106, 60, 0.2);
+}
