@@ -44,4 +44,24 @@ describe('mock services', () => {
     expect(tickets.length).toBeGreaterThan(1)
     expect(tickets.at(-1)?.categoryId).toBe('aurora-general')
   })
+
+  it('records confirmed ETH receipts while token ids are still loading from chain', async () => {
+    const session = await walletService.connect()
+    const event = await eventsService.getEvent('aurora-city-live')
+    const category = event.categories[0]
+
+    contractService.recordConfirmedPurchase({
+      event,
+      category,
+      quantity: 1,
+      account: session.account!,
+      txHash: '0xabc123',
+    })
+
+    const tickets = await contractService.getOwnedTickets(session.account!)
+    const receipt = tickets.find((ticket) => ticket.txHash === '0xabc123')
+
+    expect(receipt?.categoryId).toBe(category.id)
+    expect(receipt?.tokenId).toBeNull()
+  })
 })

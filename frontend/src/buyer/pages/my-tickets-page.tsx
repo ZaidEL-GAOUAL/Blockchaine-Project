@@ -17,6 +17,18 @@ import {
 } from '@/shared/web3/contracts'
 import { getKnownChainName } from '@/shared/web3/wagmi'
 
+function ownershipBaseKey(ticket: OwnedTicket) {
+  return [
+    ticket.walletAddress.toLowerCase(),
+    ticket.contractAddress.toLowerCase(),
+    ticket.categoryId,
+  ].join(':')
+}
+
+function ownershipExactKey(ticket: OwnedTicket) {
+  return [ownershipBaseKey(ticket), ticket.tokenId ?? ticket.txHash ?? ticket.id].join(':')
+}
+
 export function MyTicketsPage() {
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
@@ -51,15 +63,14 @@ export function MyTicketsPage() {
               })
             : []
 
-        const mergedTickets = [...mockOwnedTickets]
+        const chainCategoryKeys = new Set(onChainTickets.map(ownershipBaseKey))
+        const mergedTickets = mockOwnedTickets.filter(
+          (ticket) => ticket.tokenId !== null || !chainCategoryKeys.has(ownershipBaseKey(ticket)),
+        )
+
         for (const onChainTicket of onChainTickets) {
           const alreadyListed = mergedTickets.some(
-            (ticket) =>
-              ticket.walletAddress.toLowerCase() ===
-                onChainTicket.walletAddress.toLowerCase() &&
-              ticket.contractAddress.toLowerCase() ===
-                onChainTicket.contractAddress.toLowerCase() &&
-              ticket.tokenId === onChainTicket.tokenId,
+            (ticket) => ownershipExactKey(ticket) === ownershipExactKey(onChainTicket),
           )
 
           if (!alreadyListed) {
@@ -192,8 +203,14 @@ export function MyTicketsPage() {
                 </p>
                 <p>
                   <span className="font-semibold text-[var(--foreground)]">Token ID:</span>{' '}
-                  {ticket.tokenId}
+                  {ticket.tokenId ?? 'Waiting for chain read'}
                 </p>
+                {ticket.txHash ? (
+                  <p className="break-all">
+                    <span className="font-semibold text-[var(--foreground)]">Tx:</span>{' '}
+                    {ticket.txHash}
+                  </p>
+                ) : null}
                 <p className="break-all">
                   <span className="font-semibold text-[var(--foreground)]">Contract:</span>{' '}
                   {ticket.contractAddress}
