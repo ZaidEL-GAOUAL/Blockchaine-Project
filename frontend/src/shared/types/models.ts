@@ -29,7 +29,7 @@ export interface Event {
 
 export interface OwnedTicket {
   id: string
-  tokenId: number
+  tokenId: number | null
   eventId: string
   eventTitle: string
   categoryId: string
@@ -37,6 +37,7 @@ export interface OwnedTicket {
   walletAddress: string
   contractAddress: string
   purchaseMethod: PurchaseMethod
+  txHash?: string
 }
 
 export interface WalletSession {

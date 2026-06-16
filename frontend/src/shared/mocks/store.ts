@@ -239,6 +239,47 @@ export function purchaseTickets(
   }
 }
 
+export function recordPurchaseReceipt({
+  event,
+  category,
+  quantity,
+  walletAddress,
+  txHash,
+}: {
+  event: Event
+  category: TicketCategory
+  quantity: number
+  walletAddress: string
+  txHash: string
+}) {
+  const state = getStoreState()
+  const alreadyRecorded = state.ownedTickets.some((ticket) => ticket.txHash === txHash)
+
+  if (alreadyRecorded) {
+    return state.ownedTickets.filter((ticket) => ticket.txHash === txHash)
+  }
+
+  const receiptTickets: OwnedTicket[] = Array.from({ length: quantity }, (_, index) => ({
+    id: `receipt-${txHash}-${index}`,
+    tokenId: null,
+    eventId: event.id,
+    eventTitle: event.title,
+    categoryId: category.id,
+    categoryName: category.name,
+    walletAddress,
+    contractAddress: category.contractAddress,
+    purchaseMethod: 'ETH',
+    txHash,
+  }))
+
+  writePersistedStore({
+    ...state,
+    ownedTickets: [...state.ownedTickets, ...receiptTickets],
+  })
+
+  return receiptTickets
+}
+
 export function createEvent(payload: CreateEventPayload) {
   const state = getStoreState()
   const nextIdBase = slugify(payload.title) || `event-${state.counters.event}`

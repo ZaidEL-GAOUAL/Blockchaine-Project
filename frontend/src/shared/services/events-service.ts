@@ -53,29 +53,44 @@ function buildApiCategory(
   }
 }
 
+function listLocalEvents() {
+  return getStoreState().events
+}
+
+function getLocalEvent(eventId: string) {
+  const event = listLocalEvents().find((item) => item.id === eventId)
+
+  if (!event) {
+    throw new Error('Event not found.')
+  }
+
+  return event
+}
+
 export const eventsService = {
   listEvents() {
     if (apiClient.isConfigured()) {
-      return apiClient.listEvents()
+      return apiClient
+        .listEvents()
+        .then((events) => (events.length > 0 ? events : listLocalEvents()))
+        .catch(() => listLocalEvents())
     }
 
-    return withDelay(() => getStoreState().events)
+    return withDelay(() => listLocalEvents())
   },
 
   getEvent(eventId: string) {
     if (apiClient.isConfigured()) {
-      return apiClient.getEvent(eventId)
+      return apiClient.getEvent(eventId).catch((apiError: Error) => {
+        try {
+          return getLocalEvent(eventId)
+        } catch {
+          throw apiError
+        }
+      })
     }
 
-    return withDelay(() => {
-      const event = getStoreState().events.find((item) => item.id === eventId)
-
-      if (!event) {
-        throw new Error('Event not found.')
-      }
-
-      return event
-    })
+    return withDelay(() => getLocalEvent(eventId))
   },
 
   createEvent(payload: CreateEventPayload) {

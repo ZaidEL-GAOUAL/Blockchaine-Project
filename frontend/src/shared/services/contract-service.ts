@@ -1,6 +1,15 @@
-import { getStoreState, purchaseTickets, subscribeToStore } from '@/shared/mocks/store'
+import {
+  getStoreState,
+  purchaseTickets,
+  recordPurchaseReceipt,
+  subscribeToStore,
+} from '@/shared/mocks/store'
 import { withDelay } from '@/shared/services/helpers'
-import type { ContractPurchasePayload } from '@/shared/types/models'
+import type {
+  ContractPurchasePayload,
+  Event,
+  TicketCategory,
+} from '@/shared/types/models'
 
 export const contractService = {
   buyTickets(payload: ContractPurchasePayload) {
@@ -22,6 +31,22 @@ export const contractService = {
         ),
       260,
     )
+  },
+
+  recordConfirmedPurchase(payload: {
+    event: Event
+    category: TicketCategory
+    quantity: number
+    account: string
+    txHash: string
+  }) {
+    return recordPurchaseReceipt({
+      event: payload.event,
+      category: payload.category,
+      quantity: payload.quantity,
+      walletAddress: payload.account,
+      txHash: payload.txHash,
+    })
   },
 
   withdraw(contractAddress: string) {

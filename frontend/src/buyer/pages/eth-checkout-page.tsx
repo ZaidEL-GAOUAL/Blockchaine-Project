@@ -1,5 +1,5 @@
 import { CheckCircle2, Copy, RefreshCcw, Wallet } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { parseEther } from 'viem'
 import {
@@ -12,6 +12,7 @@ import {
 } from 'wagmi'
 
 import { formatEth } from '@/shared/lib/format'
+import { contractService } from '@/shared/services/contract-service'
 import { eventsService } from '@/shared/services/events-service'
 import type { Event } from '@/shared/types/models'
 import { Badge } from '@/shared/ui/badge'
@@ -33,6 +34,7 @@ export function EthCheckoutPage() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [requestError, setRequestError] = useState('')
   const [submittedHash, setSubmittedHash] = useState<`0x${string}` | undefined>()
+  const recordedReceiptHash = useRef<string | null>(null)
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
   const requiredChain = getRequiredChain()
@@ -79,6 +81,29 @@ export function EthCheckoutPage() {
     () => event?.categories.find((item) => item.id === categoryId) ?? null,
     [categoryId, event],
   )
+
+  useEffect(() => {
+    if (!isConfirmed || !submittedHash || !event || !selectedCategory || !address) {
+      return
+    }
+
+    if (recordedReceiptHash.current === submittedHash) {
+      return
+    }
+
+    const resolvedAddress = resolveCategoryContractAddress(selectedCategory)
+    contractService.recordConfirmedPurchase({
+      event,
+      category: {
+        ...selectedCategory,
+        contractAddress: resolvedAddress ?? selectedCategory.contractAddress,
+      },
+      quantity,
+      account: address,
+      txHash: submittedHash,
+    })
+    recordedReceiptHash.current = submittedHash
+  }, [address, event, isConfirmed, quantity, selectedCategory, submittedHash])
 
   async function handleConnectWallet() {
     const injectedConnector = connectors[0]
