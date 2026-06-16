@@ -25,6 +25,12 @@ forge install OpenZeppelin/openzeppelin-contracts-upgradeable
 forge test
 ```
 
+## Compile
+
+```bash
+./compile.sh
+```
+
 ## Deploy To Sepolia
 
 Create a local `.env` file or export these variables in your shell:

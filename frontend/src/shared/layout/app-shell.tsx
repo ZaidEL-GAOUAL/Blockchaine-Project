@@ -28,7 +28,7 @@ export function AppShell({ children }: PropsWithChildren) {
               <div>
                 <p className="font-display text-xl">Blockchaine Tickets</p>
                 <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">
-                  Caffeine front-end demo
+                  NFT ticketing frontend
                 </p>
               </div>
             </Link>
@@ -57,8 +57,8 @@ export function AppShell({ children }: PropsWithChildren) {
         <main className="flex-1 py-8">{children}</main>
 
         <footer className="border-t border-[var(--border)] py-8 text-sm text-[var(--muted-foreground)]">
-          Frontend-only prototype for the course project: event discovery, ETH checkout,
-          fake card flow, and seller setup screens.
+          NFT ticketing course project: API events, contract-backed categories, ETH
+          checkout, card minting, and seller setup screens.
         </footer>
       </div>
     </div>

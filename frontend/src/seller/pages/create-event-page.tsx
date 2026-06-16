@@ -90,7 +90,7 @@ export function CreateEventPage() {
           <h1 className="font-display text-4xl">Create an event</h1>
           <p className="mt-3 text-sm leading-7 text-[var(--muted-foreground)]">
             Keep it simple for the project: define the buyer-facing event details now, then add
-            ticket categories and mock contract deployment in the next screen.
+            ticket categories and contract deployment in the next screen.
           </p>
         </div>
 
@@ -98,7 +98,7 @@ export function CreateEventPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <Input
               label="Event title"
-              placeholder="Aurora City Live"
+              placeholder="Concert name"
               value={form.title}
               error={errors.title}
               onChange={(eventObject) => updateField('title', eventObject.target.value)}
@@ -129,7 +129,7 @@ export function CreateEventPage() {
           </div>
           <Input
             label="Hero image URL"
-            hint="This can stay as a placeholder image for the frontend-only version."
+            hint="Use a public image URL for the event banner."
             value={form.heroImage}
             onChange={(eventObject) => updateField('heroImage', eventObject.target.value)}
           />
@@ -178,7 +178,7 @@ export function CreateEventPage() {
           <div className="grid gap-4 text-sm leading-7 text-[var(--muted-foreground)]">
             <p>• The event becomes immediately visible in the seller dashboard.</p>
             <p>• Buyer pages can already render the event, even before categories are added.</p>
-            <p>• The next step is creating a ticket category and showing its mock deployed address.</p>
+            <p>• The next step is creating a ticket category and showing its deployed address.</p>
           </div>
         )}
       </Card>

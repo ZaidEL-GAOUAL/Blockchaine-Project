@@ -1,7 +1,19 @@
 import pytest
 
-from app.domain.models import CreateCategoryPayload, CreateEventPayload, Event
-from app.domain.services import EventNotFoundError, EventService, slugify
+from app.domain.models import (
+    CardCheckoutPayload,
+    CreateCategoryPayload,
+    CreateEventPayload,
+    Event,
+    TicketCategory,
+)
+from app.domain.services import (
+    EventNotFoundError,
+    EventService,
+    TicketCategoryNotFoundError,
+    TicketSupplyError,
+    slugify,
+)
 from tests.fakes import FakeContractDeployer, FakeEventRepository
 
 
@@ -88,3 +100,110 @@ async def test_create_category_unknown_event_raises():
     )
     with pytest.raises(EventNotFoundError):
         await service.create_category("nope", payload)
+
+
+async def test_pay_by_card_mints_and_updates_supply():
+    category = TicketCategory(
+        id="aurora-general",
+        event_id="aurora-city-live",
+        name="General",
+        symbol="GEN",
+        price_eth=0.01,
+        price_eur=10,
+        max_supply=10,
+        minted_count=1,
+        contract_address="0x1111111111111111111111111111111111111111",
+    )
+    existing = Event(
+        id="aurora-city-live",
+        title="Aurora",
+        organizer="x",
+        date="x",
+        venue="x",
+        categories=[category],
+    )
+    repo = FakeEventRepository([existing])
+    deployer = FakeContractDeployer(mint_tx_hash="0xMINTED")
+    service = EventService(repo, deployer)
+
+    tx_hash = await service.pay_by_card(
+        CardCheckoutPayload(
+            event_id="aurora-city-live",
+            category_id="aurora-general",
+            quantity=2,
+            cardholder_name="Zaid",
+            card_number="4242424242424242",
+            expiration="09/28",
+            cvc="123",
+            wallet_address="0x2222222222222222222222222222222222222222",
+        )
+    )
+
+    event = await service.get_event("aurora-city-live")
+
+    assert tx_hash == "0xMINTED"
+    assert deployer.mint_calls[0]["quantity"] == 2
+    assert event.categories[0].minted_count == 3
+
+
+async def test_pay_by_card_unknown_category_raises():
+    existing = Event(
+        id="aurora-city-live",
+        title="Aurora",
+        organizer="x",
+        date="x",
+        venue="x",
+        categories=[],
+    )
+    service = EventService(FakeEventRepository([existing]), FakeContractDeployer())
+
+    with pytest.raises(TicketCategoryNotFoundError):
+        await service.pay_by_card(
+            CardCheckoutPayload(
+                event_id="aurora-city-live",
+                category_id="missing",
+                quantity=1,
+                cardholder_name="Zaid",
+                card_number="4242424242424242",
+                expiration="09/28",
+                cvc="123",
+                wallet_address="0x2222222222222222222222222222222222222222",
+            )
+        )
+
+
+async def test_pay_by_card_rejects_sold_out_category():
+    category = TicketCategory(
+        id="aurora-general",
+        event_id="aurora-city-live",
+        name="General",
+        symbol="GEN",
+        price_eth=0.01,
+        price_eur=10,
+        max_supply=1,
+        minted_count=1,
+        contract_address="0x1111111111111111111111111111111111111111",
+    )
+    existing = Event(
+        id="aurora-city-live",
+        title="Aurora",
+        organizer="x",
+        date="x",
+        venue="x",
+        categories=[category],
+    )
+    service = EventService(FakeEventRepository([existing]), FakeContractDeployer())
+
+    with pytest.raises(TicketSupplyError):
+        await service.pay_by_card(
+            CardCheckoutPayload(
+                event_id="aurora-city-live",
+                category_id="aurora-general",
+                quantity=1,
+                cardholder_name="Zaid",
+                card_number="4242424242424242",
+                expiration="09/28",
+                cvc="123",
+                wallet_address="0x2222222222222222222222222222222222222222",
+            )
+        )

@@ -1,5 +1,5 @@
 import { CheckCircle2, Copy, RefreshCcw, Wallet } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { parseEther } from 'viem'
 import {
@@ -7,12 +7,12 @@ import {
   useChainId,
   useConnect,
   useSwitchChain,
+  usePublicClient,
   useWaitForTransactionReceipt,
   useWriteContract,
 } from 'wagmi'
 
 import { formatEth } from '@/shared/lib/format'
-import { contractService } from '@/shared/services/contract-service'
 import { eventsService } from '@/shared/services/events-service'
 import type { Event } from '@/shared/types/models'
 import { Badge } from '@/shared/ui/badge'
@@ -34,9 +34,9 @@ export function EthCheckoutPage() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [requestError, setRequestError] = useState('')
   const [submittedHash, setSubmittedHash] = useState<`0x${string}` | undefined>()
-  const recordedReceiptHash = useRef<string | null>(null)
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
+  const publicClient = usePublicClient()
   const requiredChain = getRequiredChain()
   const { connect, connectors, error: connectError, isPending: isConnecting } = useConnect()
   const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain()
@@ -82,29 +82,6 @@ export function EthCheckoutPage() {
     [categoryId, event],
   )
 
-  useEffect(() => {
-    if (!isConfirmed || !submittedHash || !event || !selectedCategory || !address) {
-      return
-    }
-
-    if (recordedReceiptHash.current === submittedHash) {
-      return
-    }
-
-    const resolvedAddress = resolveCategoryContractAddress(selectedCategory)
-    contractService.recordConfirmedPurchase({
-      event,
-      category: {
-        ...selectedCategory,
-        contractAddress: resolvedAddress ?? selectedCategory.contractAddress,
-      },
-      quantity,
-      account: address,
-      txHash: submittedHash,
-    })
-    recordedReceiptHash.current = submittedHash
-  }, [address, event, isConfirmed, quantity, selectedCategory, submittedHash])
-
   async function handleConnectWallet() {
     const injectedConnector = connectors[0]
 
@@ -137,6 +114,11 @@ export function EthCheckoutPage() {
       return
     }
 
+    if (!publicClient) {
+      setRequestError('The Sepolia RPC client is not ready yet. Please try again.')
+      return
+    }
+
     if (chainId !== requiredChain.id) {
       try {
         await switchChainAsync({ chainId: requiredChain.id })
@@ -152,6 +134,15 @@ export function EthCheckoutPage() {
 
     try {
       setRequestError('')
+      const bytecode = await publicClient.getCode({ address: resolvedAddress })
+
+      if (!bytecode || bytecode === '0x') {
+        setRequestError(
+          'This category address is not a deployed contract on Sepolia. Re-create the category now that the backend deployer key is configured.',
+        )
+        return
+      }
+
       const result = await writeContractAsync({
         address: resolvedAddress,
         abi: ticketAbi,
@@ -189,7 +180,7 @@ export function EthCheckoutPage() {
       <StateBlock
         eyebrow="Loading"
         title="Warming up wallet checkout"
-        description="Fetching the event details and the current mock wallet session before the ETH purchase screen renders."
+        description="Fetching event details and seller-defined ticket categories from the API before the ETH purchase screen renders."
       />
     )
   }
@@ -252,7 +243,8 @@ export function EthCheckoutPage() {
             </p>
             <p className="text-sm leading-7 text-[var(--muted-foreground)]">
               Add a deployed address in `.env.local` with the matching Vite variable, then
-              restart the dev server. The seller screens still use mocked deployment for now.
+              restart the dev server. Seller-created categories use the contract address
+              returned by the backend deployer.
             </p>
           </Card>
         ) : null}

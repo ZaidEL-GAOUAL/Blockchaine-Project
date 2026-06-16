@@ -139,7 +139,7 @@ export function HomePage() {
               </p>
             </div>
             <div className="grid gap-3 text-sm text-[var(--muted-foreground)]">
-              <p>• Wallet-first ETH checkout with mocked transaction feedback</p>
+              <p>• Wallet-first ETH checkout with on-chain transaction feedback</p>
               <p>• Fake card payment with wallet address capture</p>
               <p>• Seller screens for event setup and ticket-category deployment</p>
             </div>

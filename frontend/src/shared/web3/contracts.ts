@@ -3,20 +3,10 @@ import { getAddress, isAddress, type Address, type PublicClient } from 'viem'
 import type { Event, OwnedTicket, TicketCategory } from '@/shared/types/models'
 import { ticketAbi } from '@/shared/web3/ticket-abi'
 
-const contractOverrides: Record<string, string | undefined> = {
-  'aurora-general': import.meta.env.VITE_CONTRACT_AURORA_GENERAL,
-  'aurora-lounge': import.meta.env.VITE_CONTRACT_AURORA_LOUNGE,
-}
-
-function isMockContractAddress(address: string) {
-  return address.toLowerCase().startsWith('0xcaffe1')
-}
-
 export function resolveCategoryContractAddress(category: TicketCategory) {
-  const configuredAddress = contractOverrides[category.id]?.trim()
-  const candidate = configuredAddress || category.contractAddress
+  const candidate = category.contractAddress.trim()
 
-  if (!candidate || isMockContractAddress(candidate) || !isAddress(candidate)) {
+  if (!candidate || !isAddress(candidate)) {
     return null
   }
 
@@ -71,7 +61,7 @@ export async function readOwnedTicketsFromChain({
             categoryName: category.name,
             walletAddress: account,
             contractAddress: resolvedAddress,
-            purchaseMethod: 'ETH' as const,
+            purchaseMethod: 'ON_CHAIN' as const,
           }))
         } catch {
           return [] as OwnedTicket[]

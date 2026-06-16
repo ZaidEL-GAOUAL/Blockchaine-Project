@@ -56,3 +56,11 @@ class MongoEventRepository(EventRepository):
         if result.matched_count == 0:
             raise KeyError(event_id)
         return category
+
+    async def increment_category_minted_count(
+        self, event_id: str, category_id: str, quantity: int
+    ) -> None:
+        await self._events.update_one(
+            {"_id": event_id, "categories.id": category_id},
+            {"$inc": {"categories.$.minted_count": quantity}},
+        )

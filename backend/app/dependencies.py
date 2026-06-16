@@ -17,7 +17,6 @@ from app.config import settings
 from app.domain.ports import ContractDeployer, EventRepository
 from app.domain.services import EventService
 from app.infrastructure.blockchain import (
-    PlaceholderContractDeployer,
     Web3ContractDeployer,
 )
 from app.infrastructure.mongo_repository import MongoEventRepository
@@ -34,14 +33,11 @@ def get_event_repository(
 
 
 def get_contract_deployer() -> ContractDeployer:
-    if settings.use_web3_deployer:
-        return Web3ContractDeployer(
-            rpc_url=settings.rpc_url,
-            private_key=settings.deployer_private_key,
-            artifact_path=settings.resolved_ticket_artifact_path,
-        )
-
-    return PlaceholderContractDeployer()
+    return Web3ContractDeployer(
+        rpc_url=settings.rpc_url,
+        private_key=settings.deployer_private_key,
+        artifact_path=settings.resolved_ticket_artifact_path,
+    )
 
 
 def get_event_service(

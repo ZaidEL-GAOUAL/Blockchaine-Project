@@ -1,9 +1,8 @@
 """Event use cases.
 
-Pure business logic. Depends only on the EventRepository *port*, never on a
-concrete implementation. The slug-based ID generation mirrors the frontend
-mock (`slugify(title)`, with a numeric suffix on collision) so IDs stay
-human-readable and consistent across the stack.
+Pure business logic. Depends only on ports, never on concrete infrastructure.
+The slug-based ID generation keeps event and category IDs human-readable and
+consistent across the stack.
 """
 
 from __future__ import annotations
@@ -11,6 +10,7 @@ from __future__ import annotations
 import re
 
 from app.domain.models import (
+    CardCheckoutPayload,
     CreateCategoryPayload,
     CreateEventPayload,
     Event,
@@ -21,6 +21,14 @@ from app.domain.ports import ContractDeployer, EventRepository
 
 class EventNotFoundError(Exception):
     """Raised when an event id does not exist."""
+
+
+class TicketCategoryNotFoundError(Exception):
+    """Raised when a ticket category id does not exist for an event."""
+
+
+class TicketSupplyError(Exception):
+    """Raised when a purchase would exceed category supply."""
 
 
 def slugify(value: str) -> str:
@@ -82,7 +90,7 @@ class EventService:
         # Fails with EventNotFoundError if the event does not exist.
         event = await self.get_event(event_id)
 
-        # Deploy the NFT contract (placeholder today, real web3.py later).
+        # Deploy the NFT contract for this category.
         contract_address = await self._deployer.deploy_ticket_contract(
             name=payload.name,
             symbol=payload.symbol,
@@ -91,7 +99,7 @@ class EventService:
             price_wei=eth_to_wei(payload.price_eth),
         )
 
-        # Slug id, mirroring the frontend mock: slugify("<eventId>-<name>").
+        # Slug id: slugify("<eventId>-<name>").
         base = slugify(f"{event_id}-{payload.name}") or "category"
         category_id = base
         suffix = 1
@@ -115,3 +123,31 @@ class EventService:
             benefits=payload.benefits,
         )
         return await self._repo.add_category(event_id, category)
+
+    async def pay_by_card(self, payload: CardCheckoutPayload) -> str:
+        event = await self.get_event(payload.event_id)
+        category = next(
+            (item for item in event.categories if item.id == payload.category_id),
+            None,
+        )
+
+        if category is None:
+            raise TicketCategoryNotFoundError(payload.category_id)
+
+        if payload.quantity <= 0:
+            raise TicketSupplyError("Quantity must be at least 1.")
+
+        if category.minted_count + payload.quantity > category.max_supply:
+            raise TicketSupplyError("Selected quantity exceeds remaining supply.")
+
+        tx_hash = await self._deployer.mint_tickets(
+            contract_address=category.contract_address,
+            recipient=payload.wallet_address,
+            quantity=payload.quantity,
+        )
+        await self._repo.increment_category_minted_count(
+            payload.event_id,
+            payload.category_id,
+            payload.quantity,
+        )
+        return tx_hash

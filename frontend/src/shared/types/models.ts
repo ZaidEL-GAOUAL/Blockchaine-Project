@@ -1,4 +1,4 @@
-export type PurchaseMethod = 'ETH' | 'CARD'
+export type PurchaseMethod = 'ON_CHAIN'
 
 export interface TicketCategory {
   id: string
@@ -29,7 +29,7 @@ export interface Event {
 
 export interface OwnedTicket {
   id: string
-  tokenId: number | null
+  tokenId: number
   eventId: string
   eventTitle: string
   categoryId: string
@@ -37,7 +37,6 @@ export interface OwnedTicket {
   walletAddress: string
   contractAddress: string
   purchaseMethod: PurchaseMethod
-  txHash?: string
 }
 
 export interface WalletSession {
