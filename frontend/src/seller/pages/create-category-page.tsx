@@ -26,7 +26,7 @@ const initialForm: CreateCategoryPayload = {
   priceEur: 39,
   maxSupply: 100,
   metadataUri: 'ipfs://new-event/category',
-  benefits: ['Collectible NFT ticket', 'Simple demo-ready metadata'],
+  benefits: ['Collectible NFT ticket', 'On-chain ownership'],
 }
 
 export function CreateCategoryPage() {
@@ -121,7 +121,7 @@ export function CreateCategoryPage() {
       <StateBlock
         eyebrow="Loading"
         title="Preparing the category deployment form"
-        description="Fetching the target event before defining the ticket category and its mock contract."
+        description="Fetching the target event before defining the ticket category and deploying its contract."
       />
     )
   }

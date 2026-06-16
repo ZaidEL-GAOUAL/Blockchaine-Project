@@ -1,4 +1,5 @@
 import type {
+  CardCheckoutPayload,
   CreateCategoryPayload,
   CreateEventPayload,
   Event,
@@ -6,20 +7,19 @@ import type {
 } from '@/shared/types/models'
 
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim()
-const isRealBrowserRuntime =
-  typeof window !== 'undefined' &&
-  typeof navigator !== 'undefined' &&
-  !navigator.userAgent.toLowerCase().includes('jsdom')
-const defaultApiBaseUrl = isRealBrowserRuntime ? 'http://localhost:8000' : undefined
+const defaultApiBaseUrl = 'http://localhost:8000'
 const apiBaseUrl = (configuredApiBaseUrl || defaultApiBaseUrl)?.replace(/\/$/, '')
 
 interface CreateCategoryApiResponse {
-  category?: Partial<TicketCategory>
-  deployment?: {
-    contractAddress?: string
-    symbol?: string
+  category: TicketCategory
+  deployment: {
+    contractAddress: string
+    symbol: string
   }
-  contractAddress?: string
+}
+
+interface CardCheckoutApiResponse {
+  txHash: string
 }
 
 export const apiClient = {
@@ -96,5 +96,25 @@ export const apiClient = {
     }
 
     return (await response.json()) as CreateCategoryApiResponse
+  },
+
+  async payByCard(payload: CardCheckoutPayload) {
+    if (!apiBaseUrl) {
+      throw new Error('VITE_API_BASE_URL is not configured.')
+    }
+
+    const response = await fetch(`${apiBaseUrl}/checkout/card`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Card checkout failed with status ${response.status}.`)
+    }
+
+    return (await response.json()) as CardCheckoutApiResponse
   },
 }

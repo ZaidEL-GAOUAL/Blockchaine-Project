@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from 'react'
 import type { Address } from 'viem'
 import { useAccount, useChainId, useConnect, useDisconnect, usePublicClient } from 'wagmi'
 
-import { contractService } from '@/shared/services/contract-service'
 import { eventsService } from '@/shared/services/events-service'
 import type { Event, OwnedTicket } from '@/shared/types/models'
 import { Badge } from '@/shared/ui/badge'
@@ -16,18 +15,6 @@ import {
   readOwnedTicketsFromChain,
 } from '@/shared/web3/contracts'
 import { getKnownChainName } from '@/shared/web3/wagmi'
-
-function ownershipBaseKey(ticket: OwnedTicket) {
-  return [
-    ticket.walletAddress.toLowerCase(),
-    ticket.contractAddress.toLowerCase(),
-    ticket.categoryId,
-  ].join(':')
-}
-
-function ownershipExactKey(ticket: OwnedTicket) {
-  return [ownershipBaseKey(ticket), ticket.tokenId ?? ticket.txHash ?? ticket.id].join(':')
-}
 
 export function MyTicketsPage() {
   const { address, isConnected } = useAccount()
@@ -51,9 +38,6 @@ export function MyTicketsPage() {
         const eventList = await eventsService.listEvents()
         setEvents(eventList)
 
-        const mockOwnedTickets = address
-          ? await contractService.getOwnedTickets(address)
-          : []
         const onChainTickets =
           address && publicClient
             ? await readOwnedTicketsFromChain({
@@ -63,22 +47,7 @@ export function MyTicketsPage() {
               })
             : []
 
-        const chainCategoryKeys = new Set(onChainTickets.map(ownershipBaseKey))
-        const mergedTickets = mockOwnedTickets.filter(
-          (ticket) => ticket.tokenId !== null || !chainCategoryKeys.has(ownershipBaseKey(ticket)),
-        )
-
-        for (const onChainTicket of onChainTickets) {
-          const alreadyListed = mergedTickets.some(
-            (ticket) => ownershipExactKey(ticket) === ownershipExactKey(onChainTicket),
-          )
-
-          if (!alreadyListed) {
-            mergedTickets.push(onChainTicket)
-          }
-        }
-
-        setTickets(mergedTickets)
+        setTickets(onChainTickets)
         setStatus('success')
       } catch (responseError) {
         setStatus('error')
@@ -113,7 +82,7 @@ export function MyTicketsPage() {
       <StateBlock
         eyebrow="Loading"
         title="Reading wallet-owned tickets"
-        description="Refreshing the connected wallet and combining on-chain ticket ownership with the demo fake-card mint records."
+        description="Refreshing the connected wallet and reading ticket ownership from the deployed category contracts."
       />
     )
   }
@@ -133,7 +102,7 @@ export function MyTicketsPage() {
       <StateBlock
         eyebrow="Empty"
         title="Connect a wallet to see ticket ownership"
-        description="This screen now uses a real injected wallet. It can read configured ticket contracts on-chain and also keep the fake-card demo flow visible locally."
+        description="This screen uses a real injected wallet and reads configured ticket contracts on-chain."
         action={
           <Button onClick={connectWallet} disabled={isConnecting}>
             {isConnecting ? 'Connecting wallet...' : 'Connect wallet'}
@@ -152,8 +121,8 @@ export function MyTicketsPage() {
             <h1 className="font-display text-4xl">My NFT tickets</h1>
             <p className="mt-2 text-sm leading-7 text-[var(--muted-foreground)]">
               Tickets shown here are filtered by the connected wallet address. Real ETH
-              purchases can be read on-chain, and the fake card flow still appears through the
-              local demo store.
+              purchases and backend card-minted tickets are read from the deployed NFT
+              contracts.
             </p>
           </div>
         </div>
@@ -188,7 +157,7 @@ export function MyTicketsPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs uppercase tracking-[0.22em] text-[var(--muted-foreground)]">
-                    {ticket.purchaseMethod} purchase
+                    On-chain ticket
                   </p>
                   <h2 className="mt-2 font-display text-2xl">{ticket.eventTitle}</h2>
                 </div>
@@ -203,14 +172,8 @@ export function MyTicketsPage() {
                 </p>
                 <p>
                   <span className="font-semibold text-[var(--foreground)]">Token ID:</span>{' '}
-                  {ticket.tokenId ?? 'Waiting for chain read'}
+                  {ticket.tokenId}
                 </p>
-                {ticket.txHash ? (
-                  <p className="break-all">
-                    <span className="font-semibold text-[var(--foreground)]">Tx:</span>{' '}
-                    {ticket.txHash}
-                  </p>
-                ) : null}
                 <p className="break-all">
                   <span className="font-semibold text-[var(--foreground)]">Contract:</span>{' '}
                   {ticket.contractAddress}
@@ -227,9 +190,8 @@ export function MyTicketsPage() {
           <p className="font-semibold">Integration note</p>
         </div>
         <p className="text-sm leading-7 text-[var(--muted-foreground)]">
-          Configured on-chain categories found: {countConfiguredCategories(events)}. Set the
-          contract env vars for the seeded categories to make the ETH checkout and ownership
-          views hit real contracts.
+          Configured on-chain categories found: {countConfiguredCategories(events)}. The app
+          uses the contract addresses returned by the API for ETH checkout and ownership reads.
         </p>
       </Card>
     </div>

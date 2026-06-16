@@ -120,7 +120,7 @@ export function CardCheckoutPage() {
       setTxHash(result.txHash)
     } catch (responseError) {
       setRequestError(
-        responseError instanceof Error ? responseError.message : 'Fake payment failed.',
+        responseError instanceof Error ? responseError.message : 'Card checkout failed.',
       )
     } finally {
       setIsSubmitting(false)
@@ -160,7 +160,7 @@ export function CardCheckoutPage() {
   return (
     <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
       <Card className="grid gap-5">
-        <Badge className="w-fit">Fake euro checkout</Badge>
+            <Badge className="w-fit">Fake euro checkout</Badge>
         <div>
           <h1 className="font-display text-4xl">Pay by card, mint to a wallet</h1>
           <p className="mt-3 text-sm leading-7 text-[var(--muted-foreground)]">
@@ -173,14 +173,14 @@ export function CardCheckoutPage() {
           <Card className="grid gap-4 bg-[var(--accent)]/8">
             <div className="flex items-center gap-3">
               <CheckCircle2 className="h-5 w-5 text-[var(--accent)]" />
-              <p className="font-semibold">Fake payment accepted</p>
+              <p className="font-semibold">Card checkout accepted</p>
             </div>
             <p className="text-sm leading-7 text-[var(--muted-foreground)]">
-              The mock API flow minted your NFT ticket on behalf of the buyer. You can now
-              view it in the My Tickets screen with the same wallet address.
+              The backend accepted the off-chain payment step and submitted the NFT mint
+              transaction for the buyer wallet.
             </p>
             <div className="rounded-2xl bg-[var(--panel)] px-4 py-3 text-sm">
-              Mint confirmation hash: <span className="font-semibold">{txHash}</span>
+              Mint transaction hash: <span className="font-semibold">{txHash}</span>
             </div>
             <Link to="/my-tickets">
               <Button>Open My Tickets</Button>
@@ -243,7 +243,7 @@ export function CardCheckoutPage() {
             ) : null}
 
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Processing fake payment...' : 'Confirm card checkout'}
+              {isSubmitting ? 'Processing card checkout...' : 'Confirm card checkout'}
             </Button>
           </form>
         )}
@@ -279,7 +279,7 @@ export function CardCheckoutPage() {
           <div className="mt-4 grid gap-3 text-sm leading-7 text-[rgba(245,239,227,0.8)]">
             <p>• Buyers can choose the non-crypto checkout path.</p>
             <p>• The form still links the purchase to a wallet address.</p>
-            <p>• The backend integration later only needs to replace this mock service.</p>
+            <p>• The backend mints the NFT to the wallet address after accepting the card flow.</p>
           </div>
         </div>
       </Card>

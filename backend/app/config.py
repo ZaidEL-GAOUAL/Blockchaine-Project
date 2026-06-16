@@ -31,7 +31,6 @@ class Settings(BaseSettings):
     # --- Blockchain (used later for deploy / mint / withdraw) ---
     rpc_url: str = "https://ethereum-sepolia-rpc.publicnode.com/"
     deployer_private_key: str = ""
-    contract_deployer_mode: str = "auto"
     ticket_artifact_path: str = str(DEFAULT_TICKET_ARTIFACT_PATH)
 
     # --- IPFS / Pinata (used later) ---
@@ -39,6 +38,7 @@ class Settings(BaseSettings):
 
     # --- CORS: where the frontend runs in dev ---
     frontend_origin: str = "http://localhost:5173"
+    frontend_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     @property
     def mongo_uri(self) -> str:
@@ -48,20 +48,16 @@ class Settings(BaseSettings):
         )
 
     @property
-    def use_web3_deployer(self) -> bool:
-        mode = self.contract_deployer_mode.lower()
-        if mode == "web3":
-            return True
-        if mode == "placeholder":
-            return False
-        return bool(self.deployer_private_key)
-
-    @property
     def resolved_ticket_artifact_path(self) -> str:
         path = Path(self.ticket_artifact_path)
         if path.is_absolute():
             return str(path)
         return str((BACKEND_ROOT / path).resolve())
+
+    @property
+    def cors_origins(self) -> list[str]:
+        origins = [self.frontend_origin, *self.frontend_origins.split(",")]
+        return list({origin.strip() for origin in origins if origin.strip()})
 
 
 settings = Settings()

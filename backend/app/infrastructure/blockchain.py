@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import json
 from pathlib import Path
 
@@ -14,21 +13,6 @@ from app.domain.ports import (
     ContractDeploymentConfigError,
     ContractDeploymentError,
 )
-
-
-class PlaceholderContractDeployer(ContractDeployer):
-    async def deploy_ticket_contract(
-        self,
-        *,
-        name: str,
-        symbol: str,
-        max_supply: int,
-        metadata_uri: str,
-        price_wei: int,
-    ) -> str:
-        seed = f"{name}|{symbol}|{max_supply}|{metadata_uri}|{price_wei}".encode()
-        digest = hashlib.sha256(seed).hexdigest()[:40]
-        return f"0x{digest}"
 
 
 class Web3ContractDeployer(ContractDeployer):
@@ -63,6 +47,20 @@ class Web3ContractDeployer(ContractDeployer):
             max_supply,
             metadata_uri,
             price_wei,
+        )
+
+    async def mint_tickets(
+        self,
+        *,
+        contract_address: str,
+        recipient: str,
+        quantity: int,
+    ) -> str:
+        return await asyncio.to_thread(
+            self._mint_sync,
+            contract_address,
+            recipient,
+            quantity,
         )
 
     @staticmethod
@@ -176,3 +174,62 @@ class Web3ContractDeployer(ContractDeployer):
             )
 
         return Web3.to_checksum_address(contract_address)
+
+    def _mint_sync(
+        self,
+        contract_address: str,
+        recipient: str,
+        quantity: int,
+    ) -> str:
+        private_key = self._normalise_private_key(self._private_key)
+        abi, _bytecode = self._load_artifact()
+        w3 = Web3(Web3.HTTPProvider(self._rpc_url, request_kwargs={"timeout": 60}))
+
+        if not w3.is_connected():
+            raise ContractDeploymentError(
+                f"Could not connect to blockchain RPC at {self._rpc_url}."
+            )
+
+        if not Web3.is_address(contract_address):
+            raise ContractDeploymentError("Ticket category has an invalid contract address.")
+
+        if not Web3.is_address(recipient):
+            raise ContractDeploymentError("Buyer wallet address is invalid.")
+
+        account = w3.eth.account.from_key(private_key)
+        contract = w3.eth.contract(
+            address=Web3.to_checksum_address(contract_address),
+            abi=abi,
+        )
+        mint_call = contract.functions.mint(
+            Web3.to_checksum_address(recipient),
+            quantity,
+        )
+
+        tx_params = {
+            "from": account.address,
+            "nonce": w3.eth.get_transaction_count(account.address),
+            "chainId": w3.eth.chain_id,
+        }
+        self._add_fee_fields(w3, tx_params)
+
+        gas_estimate = mint_call.estimate_gas({"from": account.address})
+        tx_params["gas"] = int(gas_estimate * 1.2)
+
+        transaction = mint_call.build_transaction(tx_params)
+        signed = account.sign_transaction(transaction)
+        raw_transaction = getattr(signed, "raw_transaction", None) or getattr(
+            signed, "rawTransaction"
+        )
+
+        tx_hash = w3.eth.send_raw_transaction(raw_transaction)
+        receipt = w3.eth.wait_for_transaction_receipt(
+            tx_hash, timeout=self._receipt_timeout_seconds
+        )
+
+        if receipt.get("status") != 1:
+            raise ContractDeploymentError(
+                f"Ticket mint transaction failed: {tx_hash.hex()}."
+            )
+
+        return tx_hash.hex()

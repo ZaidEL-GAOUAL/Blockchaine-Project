@@ -1,9 +1,8 @@
-import { checkoutByCard } from '@/shared/mocks/store'
-import { withDelay } from '@/shared/services/helpers'
+import { apiClient } from '@/shared/services/api-client'
 import type { CardCheckoutPayload } from '@/shared/types/models'
 
 export const checkoutService = {
   payByCard(payload: CardCheckoutPayload) {
-    return withDelay(() => checkoutByCard(payload), 550)
+    return apiClient.payByCard(payload)
   },
 }

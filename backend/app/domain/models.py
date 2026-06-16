@@ -70,6 +70,17 @@ class CreateCategoryPayload(CamelModel):
     benefits: list[str] = Field(default_factory=list)
 
 
+class CardCheckoutPayload(CamelModel):
+    event_id: str
+    category_id: str
+    quantity: int
+    cardholder_name: str
+    card_number: str
+    expiration: str
+    cvc: str
+    wallet_address: str
+
+
 # ---- Response shapes ----
 
 
@@ -85,3 +96,7 @@ class CreateCategoryResponse(CamelModel):
 
     category: TicketCategory
     deployment: Deployment
+
+
+class CardCheckoutResponse(CamelModel):
+    tx_hash: str

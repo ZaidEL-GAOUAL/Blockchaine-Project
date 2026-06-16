@@ -7,7 +7,7 @@ function renderCardCheckout() {
   window.history.pushState(
     {},
     'Card checkout',
-    '/checkout/card?eventId=aurora-city-live&categoryId=aurora-general&quantity=2',
+    '/checkout/card?eventId=test-event&categoryId=test-general&quantity=2',
   )
 
   return render(<App />)
@@ -29,7 +29,7 @@ describe('card checkout page', () => {
     expect(screen.getByText('Cardholder name is required.')).toBeInTheDocument()
   })
 
-  it('submits a fake payment and shows success state', async () => {
+  it('submits a card payment and shows success state', async () => {
     renderCardCheckout()
 
     await userEvent.type(
@@ -50,6 +50,6 @@ describe('card checkout page', () => {
       }),
     )
 
-    expect(await screen.findByText('Fake payment accepted')).toBeInTheDocument()
+    expect(await screen.findByText('Card checkout accepted')).toBeInTheDocument()
   })
 })

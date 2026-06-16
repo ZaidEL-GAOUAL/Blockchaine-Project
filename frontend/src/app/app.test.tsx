@@ -11,7 +11,7 @@ describe('app routing', () => {
   it('renders the landing page', async () => {
     renderRoute('/')
 
-    expect(await screen.findByText('Aurora City Live')).toBeInTheDocument()
+    expect(await screen.findByText('Test Event')).toBeInTheDocument()
     expect(screen.getByText('Explore tickets')).toBeInTheDocument()
   })
 

@@ -39,13 +39,17 @@ class EventRepository(ABC):
         self, event_id: str, category: TicketCategory
     ) -> TicketCategory: ...
 
+    @abstractmethod
+    async def increment_category_minted_count(
+        self, event_id: str, category_id: str, quantity: int
+    ) -> None: ...
+
 
 class ContractDeployer(ABC):
     """Deploys an NFT ticket contract for one category and returns its address.
 
-    The domain depends on this abstraction only. Today it is backed by a
-    placeholder (no real chain); once the Solidity contract exists, a web3.py
-    implementation replaces it without any change to services or routes.
+    The domain depends on this abstraction only. The production implementation
+    uses web3.py; tests provide fakes through dependency injection.
     """
 
     @abstractmethod
@@ -57,4 +61,13 @@ class ContractDeployer(ABC):
         max_supply: int,
         metadata_uri: str,
         price_wei: int,
+    ) -> str: ...
+
+    @abstractmethod
+    async def mint_tickets(
+        self,
+        *,
+        contract_address: str,
+        recipient: str,
+        quantity: int,
     ) -> str: ...

@@ -1,8 +1,8 @@
 # Ticketing Backend - NFT ticketing platform
 
 FastAPI + MongoDB API for the NFT ticketing practice. Serves event/ticket data
-to the React frontend and (in later steps) deploys NFT contracts, mints on
-card payment, and reads ownership from chain.
+to the React frontend, deploys NFT contracts for ticket categories, and mints
+tickets after an off-chain card payment.
 
 ## Stack
 - **FastAPI** (async) - REST API + auto Swagger at `/docs`
@@ -73,17 +73,13 @@ uv run --extra dev python -m pytest
 | GET | `/events/{id}` | get one event (with categories) |
 | GET | `/events/{id}/categories` | list ticket categories |
 | POST | `/events/{id}/categories` | create category, deploys NFT contract, returns `{category, deployment}` |
+| POST | `/checkout/card` | accepts card checkout data and mints tickets to the buyer wallet |
 | GET | `/health` | liveness |
 
-> The contract deployment behind `POST /events/{id}/categories` uses
-> `CONTRACT_DEPLOYER_MODE=auto` by default. If `DEPLOYER_PRIVATE_KEY` is empty,
-> it returns a deterministic placeholder address for easy local demos. If
-> `DEPLOYER_PRIVATE_KEY` is set, it uses `Web3ContractDeployer` to deploy the
-> compiled Forge artifact at `../blockchain/out/Ticket.sol/Ticket.json`.
->
-> Coming next: `POST /events/pay` (card checkout + mint),
-> `GET /tickets?account=` (owned tickets),
-> `POST /categories/{id}/withdraw` (seller collects ETH).
+`POST /events/{id}/categories` and `POST /checkout/card` use the
+`Web3ContractDeployer`. `DEPLOYER_PRIVATE_KEY` must be set to a Sepolia wallet
+that owns the deployed category contracts. If the private key or compiled
+artifact is missing, the API returns a clear error instead of fake data.
 
 ## Real Sepolia category deployment
 
@@ -99,9 +95,9 @@ Then set these values in `backend/.env`:
 ```bash
 RPC_URL=https://ethereum-sepolia-rpc.publicnode.com/
 DEPLOYER_PRIVATE_KEY=your_private_key
-CONTRACT_DEPLOYER_MODE=auto
 TICKET_ARTIFACT_PATH=../blockchain/out/Ticket.sol/Ticket.json
 ```
 
 Now `POST /events/{id}/categories` deploys one new `Ticket.sol` ERC721
-contract for that category and stores the real contract address.
+contract for that category and stores the real contract address. `POST
+/checkout/card` then calls `mint(address,uint256)` on that contract.

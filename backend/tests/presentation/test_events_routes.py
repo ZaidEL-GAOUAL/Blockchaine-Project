@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.dependencies import get_event_service
-from app.domain.models import Event
+from app.domain.models import Event, TicketCategory
 from app.domain.services import EventService
 from app.main import app
 from tests.fakes import FakeContractDeployer, FakeEventRepository
@@ -16,6 +16,18 @@ def client():
         organizer="Nova Nights",
         date="2026-09-18T20:30:00.000Z",
         venue="Grand Hall, Paris",
+        categories=[
+            TicketCategory(
+                id="aurora-general",
+                event_id="aurora-city-live",
+                name="General",
+                symbol="GEN",
+                price_eth=0.01,
+                price_eur=10,
+                max_supply=100,
+                contract_address="0x1111111111111111111111111111111111111111",
+            )
+        ],
     )
     repo = FakeEventRepository([seed])
     deployer = FakeContractDeployer(address="0xDEADBEEF")
@@ -93,4 +105,41 @@ def test_create_category_unknown_event_404(client):
             "maxSupply": 10,
         },
     )
+    assert resp.status_code == 404
+
+
+def test_card_checkout_mints_ticket(client):
+    resp = client.post(
+        "/checkout/card",
+        json={
+            "eventId": "aurora-city-live",
+            "categoryId": "aurora-general",
+            "quantity": 1,
+            "cardholderName": "Zaid",
+            "cardNumber": "4242424242424242",
+            "expiration": "09/28",
+            "cvc": "123",
+            "walletAddress": "0x2222222222222222222222222222222222222222",
+        },
+    )
+
+    assert resp.status_code == 201
+    assert resp.json()["txHash"] == "0xFAKEMINT"
+
+
+def test_card_checkout_unknown_category_404(client):
+    resp = client.post(
+        "/checkout/card",
+        json={
+            "eventId": "aurora-city-live",
+            "categoryId": "missing",
+            "quantity": 1,
+            "cardholderName": "Zaid",
+            "cardNumber": "4242424242424242",
+            "expiration": "09/28",
+            "cvc": "123",
+            "walletAddress": "0x2222222222222222222222222222222222222222",
+        },
+    )
+
     assert resp.status_code == 404

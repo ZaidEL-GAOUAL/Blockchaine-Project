@@ -1,8 +1,7 @@
-import { contractService } from '@/shared/services/contract-service'
+import { checkoutService } from '@/shared/services/checkout-service'
 import { eventsService } from '@/shared/services/events-service'
-import { walletService } from '@/shared/services/wallet-service'
 
-describe('mock services', () => {
+describe('API services', () => {
   it('creates seller content and exposes it through the event list', async () => {
     const createdEvent = await eventsService.createEvent({
       title: 'Midnight Ledger',
@@ -27,41 +26,21 @@ describe('mock services', () => {
     const events = await eventsService.listEvents()
 
     expect(events[0].id).toBe(createdEvent.id)
-    expect(createdCategory.deployment.contractAddress).toContain('0xCAFFE1')
+    expect(createdCategory.deployment.contractAddress).toMatch(/^0x[0-9a-fA-F]{40}$/)
   })
 
-  it('connects a wallet and returns owned tickets after purchase', async () => {
-    const session = await walletService.connect()
-
-    await contractService.buyTickets({
-      categoryId: 'aurora-general',
+  it('submits card checkout through the API', async () => {
+    const result = await checkoutService.payByCard({
+      eventId: 'test-event',
+      categoryId: 'test-general',
       quantity: 1,
-      account: session.account!,
+      cardholderName: 'Zaid El Gaoual',
+      cardNumber: '4242424242424242',
+      expiration: '09/28',
+      cvc: '123',
+      walletAddress: '0x2222222222222222222222222222222222222222',
     })
 
-    const tickets = await contractService.getOwnedTickets(session.account!)
-
-    expect(tickets.length).toBeGreaterThan(1)
-    expect(tickets.at(-1)?.categoryId).toBe('aurora-general')
-  })
-
-  it('records confirmed ETH receipts while token ids are still loading from chain', async () => {
-    const session = await walletService.connect()
-    const event = await eventsService.getEvent('aurora-city-live')
-    const category = event.categories[0]
-
-    contractService.recordConfirmedPurchase({
-      event,
-      category,
-      quantity: 1,
-      account: session.account!,
-      txHash: '0xabc123',
-    })
-
-    const tickets = await contractService.getOwnedTickets(session.account!)
-    const receipt = tickets.find((ticket) => ticket.txHash === '0xabc123')
-
-    expect(receipt?.categoryId).toBe(category.id)
-    expect(receipt?.tokenId).toBeNull()
+    expect(result.txHash).toMatch(/^0x[0-9a-fA-F]+$/)
   })
 })

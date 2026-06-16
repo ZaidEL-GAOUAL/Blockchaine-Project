@@ -1,31 +1,7 @@
 import pytest
 
 from app.domain.ports import ContractDeploymentConfigError
-from app.infrastructure.blockchain import (
-    PlaceholderContractDeployer,
-    Web3ContractDeployer,
-)
-
-
-async def test_placeholder_address_depends_on_metadata_uri():
-    deployer = PlaceholderContractDeployer()
-
-    first = await deployer.deploy_ticket_contract(
-        name="VIP",
-        symbol="VIP",
-        max_supply=100,
-        metadata_uri="ipfs://first",
-        price_wei=10,
-    )
-    second = await deployer.deploy_ticket_contract(
-        name="VIP",
-        symbol="VIP",
-        max_supply=100,
-        metadata_uri="ipfs://second",
-        price_wei=10,
-    )
-
-    assert first != second
+from app.infrastructure.blockchain import Web3ContractDeployer
 
 
 async def test_web3_deployer_requires_private_key():
