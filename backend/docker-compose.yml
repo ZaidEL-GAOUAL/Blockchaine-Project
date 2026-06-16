@@ -1,0 +1,21 @@
+# Spins up ONLY the MongoDB database.
+# The API (uvicorn) runs directly on your machine, not in Docker — simpler to
+# iterate on with --reload. Start the DB with:  docker compose up -d
+services:
+  mongo:
+    image: mongo:7                     # official MongoDB 7 image
+    container_name: ticketing-mongo
+    restart: unless-stopped            # auto-restart unless you stop it yourself
+    ports:
+      - "27017:27017"                  # expose Mongo on localhost:27017 (host:container)
+    environment:
+      # Root credentials, created on first launch. Pulled from your .env file
+      # (falls back to admin/changeme if not set). This user lives in the
+      # "admin" database — important for the Compass connection string below.
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-changeme}
+    volumes:
+      - mongo_data:/data/db            # persist data on disk so it survives restarts
+
+volumes:
+  mongo_data:                          # named volume, managed by Docker
